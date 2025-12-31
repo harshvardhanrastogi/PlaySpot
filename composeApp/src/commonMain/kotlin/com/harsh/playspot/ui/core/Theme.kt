@@ -39,7 +39,8 @@ private val lightColors =
         onPrimary = Color(0xFFFFFFFF),
         primaryContainer = Color(0xFFF6F6F8),
         onSurface = Color(0xFF2B64FF),
-        onSurfaceVariant = Color(0xFFFFFFFF)
+        onSurfaceVariant = Color(0xFF94A3B8),
+        outline = Color(0xFF94A3B8)
     )
 
 
@@ -48,7 +49,8 @@ private val darkColors = darkColorScheme(
     onPrimary = Color(0xFFFFFFFF),
     primaryContainer = Color(0xFF101622),
     onSurface = Color(0xFF2B64FF),
-    onSurfaceVariant = Color(0xFFFFFFFF)
+    onSurfaceVariant = Color(0xFF94A3B8),
+    outline = Color(0xFF94A3B8)
 )
 
 val ExoTypography
@@ -194,6 +196,11 @@ fun AppTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composable ()
     }
     MaterialTheme(colorScheme = colorScheme, typography = ExoTypography, content = content)
 }
+
+val DisabledOnSurface = Color(0x802563EB)
+val InputTextColor = Color(0xFF0F172A)
+
+val TextMediumDark = Color(0xFF64748B)
 
 
 
