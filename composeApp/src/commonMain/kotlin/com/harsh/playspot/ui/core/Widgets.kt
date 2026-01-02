@@ -7,22 +7,29 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -32,6 +39,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -42,7 +50,9 @@ import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.resources.vectorResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import playspot.composeapp.generated.resources.Res
+import playspot.composeapp.generated.resources.ic_facebook_logo
 import playspot.composeapp.generated.resources.ic_google_logo
+import playspot.composeapp.generated.resources.signup_continue_with_facebook
 import playspot.composeapp.generated.resources.signup_continue_with_google
 
 @Composable
@@ -77,8 +87,10 @@ fun TextField(
     }
     Column(modifier = modifier) {
         StaticLabel(staticLabelText)
+        val shape = RoundedCornerShape(8.dp)
         OutlinedTextField(
-            modifier = Modifier.fillMaxWidth().background(color = Color.White),
+            modifier = Modifier.fillMaxWidth()
+                .background(color = Color.White, shape = shape),
             value = text.value,
             onValueChange = {
                 text.value = it
@@ -116,7 +128,8 @@ fun TextField(
             },
             isError = isError,
             singleLine = singleLine,
-            visualTransformation = visualTransformation
+            visualTransformation = visualTransformation,
+            shape = shape
         )
     }
 }
@@ -202,6 +215,26 @@ fun Text2(
 }
 
 @Composable
+fun Text2(
+    modifier: Modifier = Modifier,
+    text: AnnotatedString,
+    style: Text2StyleToken = Text2StyleToken.BodyMedium,
+    color: Color = Color.Unspecified,
+    fontWeight: FontWeight = FontWeight.Normal,
+    textAlign: TextAlign = TextAlign.Unspecified
+) {
+    Text(
+        modifier = modifier,
+        text = text,
+        style = style.toTextStyle(),
+        color = color,
+        fontWeight = fontWeight,
+        textAlign = textAlign
+    )
+}
+
+
+@Composable
 fun DisplayLarge(text: String) {
     Text2(text = text, style = Text2StyleToken.DisplayLarge, color = InputTextColor)
 }
@@ -220,11 +253,17 @@ fun DisplaySmall(text: String) {
 
 //32 sp
 @Composable
-fun HeadlineLarge(text: String, fontWeight: FontWeight = FontWeight.Normal) {
+fun HeadlineLarge(
+    modifier: Modifier = Modifier,
+    text: String,
+    fontWeight: FontWeight = FontWeight.Normal,
+    color: Color = InputTextColor
+) {
     Text2(
+        modifier = modifier,
         text = text,
         style = Text2StyleToken.HeadlineLarge,
-        color = InputTextColor,
+        color = color,
         fontWeight = fontWeight
     )
 }
@@ -298,6 +337,24 @@ fun BodySmall(
 }
 
 @Composable
+fun BodySmall(
+    modifier: Modifier = Modifier,
+    text: AnnotatedString,
+    color: Color = InputTextColor,
+    textAlign: TextAlign = TextAlign.Unspecified,
+    fontWeight: FontWeight = FontWeight.Normal
+) {
+    Text2(
+        modifier = modifier,
+        text = text,
+        style = Text2StyleToken.BodySmall,
+        color = color,
+        textAlign = textAlign,
+        fontWeight = fontWeight
+    )
+}
+
+@Composable
 fun LabelLarge(text: String) {
     Text2(text = text, style = Text2StyleToken.LabelLarge, color = InputTextColor)
 }
@@ -309,8 +366,19 @@ fun LabelMedium(text: String) {
 
 
 @Composable
-fun LabelSmall(text: String) {
-    Text2(text = text, style = Text2StyleToken.LabelSmall, color = InputTextColor)
+fun LabelSmall(
+    text: String,
+    modifier: Modifier,
+    color: Color = InputTextColor,
+    fontWeight: FontWeight = FontWeight.Normal
+) {
+    Text2(
+        modifier = modifier,
+        text = text,
+        style = Text2StyleToken.LabelSmall,
+        color = color,
+        fontWeight = fontWeight
+    )
 }
 
 @Composable
@@ -336,6 +404,63 @@ fun IconText(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun TransparentToolbar(onBackPressed: () -> Unit) {
+    TopAppBar(
+        navigationIcon = {
+            Icon(
+                modifier = Modifier.minimumInteractiveComponentSize().clickable {
+                    onBackPressed()
+                },
+                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                contentDescription = null,
+                tint = InputTextColor
+            )
+        },
+        title = {
+
+        },
+        colors = TopAppBarDefaults.topAppBarColors().copy(containerColor = Color.Transparent),
+    )
+}
+
+@Composable
+fun AlternateAccountOptions() {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(top = Padding.padding20Dp),
+        horizontalArrangement = Arrangement.Center
+    ) {
+        IconText(modifier = Modifier.width(160.dp), icon = {
+            Image(
+                imageVector = vectorResource(Res.drawable.ic_google_logo),
+                contentDescription = null
+            )
+        }, text = {
+            BodyMedium(
+                modifier = Modifier.padding(start = Padding.padding4Dp),
+                text = stringResource(Res.string.signup_continue_with_google),
+                fontWeight = FontWeight.W700
+            )
+        })
+
+        Spacer(modifier = Modifier.width(Padding.padding16Dp))
+
+        IconText(modifier = Modifier.width(160.dp), icon = {
+            Image(
+                imageVector = vectorResource(Res.drawable.ic_facebook_logo),
+                contentDescription = null
+            )
+        }, text = {
+            BodyMedium(
+                modifier = Modifier.padding(start = Padding.padding4Dp),
+                text = stringResource(Res.string.signup_continue_with_facebook),
+                fontWeight = FontWeight.W700
+            )
+        })
+    }
+}
+
 
 @Preview(backgroundColor = 0xFF0000, showBackground = true)
 @Composable
@@ -343,7 +468,7 @@ fun LargeButtonPreview() {
     AppTheme {
         Column {
 //            LargeButton(modifier = Modifier.fillMaxWidth(), label = "Button")
-//            TextField(modifier = Modifier.fillMaxWidth())
+            TextField(modifier = Modifier.fillMaxWidth())
 //            TextField(modifier = Modifier.fillMaxWidth(), isError = true)
 //            DisplayLarge(text = "Get Started")
 //            DisplayMedium(text = "Get Started")

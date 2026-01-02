@@ -12,4 +12,15 @@
     <string name="signup_continue_with_facebook">Facebook</string>
     <string name="signup_already_member">Already a member?</string>
     <string name="signup_login_in">Log in</string>
+    <string name="login_welcome_back">Welcome Back</string>
+    <string name="login_join_squad">Join your squad and start the match.</string>
+    <string name="login_label_email">Email</string>
+    <string name="login_enter_email">Enter your email</string>
+    <string name="login_label_password">Password</string>
+    <string name="login_enter_password">Enter your password</string>
+    <string name="login_forgot_password">Forgot Password?</string>
+    <string name="login_cta">Log In</string>
+    <string name="login_continue_with">Or continue with</string>
+    <string name="login_signup_account">Don't have an account?</string>
+    <string name="login_signup">Sign Up</string>
 </resources>
