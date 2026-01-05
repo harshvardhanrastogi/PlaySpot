@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -12,6 +13,7 @@ import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -39,6 +41,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -65,7 +68,7 @@ fun LargeButton(
             disabledContentColor = MaterialTheme.colorScheme.onPrimary
         ), onClick = onClick
     ) {
-        Text2(text = label, style = Text2StyleToken.LabelLarge)
+        Text2(text = label, style = Text2StyleToken.BodyLarge, fontWeight = FontWeight.SemiBold)
     }
 }
 
@@ -90,7 +93,10 @@ fun TextField(
         val shape = RoundedCornerShape(8.dp)
         OutlinedTextField(
             modifier = Modifier.fillMaxWidth()
-                .background(color = Color.White, shape = shape),
+                .background(
+                    color = MaterialTheme.colorScheme.extendedColors.widgetBg,
+                    shape = shape
+                ),
             value = text.value,
             onValueChange = {
                 text.value = it
@@ -119,7 +125,7 @@ fun TextField(
 
                 // Border/Indicator Colors
                 focusedBorderColor = MaterialTheme.colorScheme.primary,
-                unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                unfocusedBorderColor = MaterialTheme.colorScheme.extendedColors.outline,
 
                 cursorColor = MaterialTheme.colorScheme.primary
             ),
@@ -257,14 +263,16 @@ fun HeadlineLarge(
     modifier: Modifier = Modifier,
     text: String,
     fontWeight: FontWeight = FontWeight.Normal,
-    color: Color = InputTextColor
+    color: Color = MaterialTheme.colorScheme.extendedColors.textDark,
+    textAlign: TextAlign = TextAlign.Unspecified
 ) {
     Text2(
         modifier = modifier,
         text = text,
         style = Text2StyleToken.HeadlineLarge,
         color = color,
-        fontWeight = fontWeight
+        fontWeight = fontWeight,
+        textAlign = textAlign
     )
 }
 
@@ -287,8 +295,19 @@ fun TitleLarge(text: String) {
 }
 
 @Composable
-fun TitleMedium(text: String) {
-    Text2(text = text, style = Text2StyleToken.TitleMedium, color = InputTextColor)
+fun TitleMedium(
+    modifier: Modifier = Modifier,
+    text: String,
+    color: Color = InputTextColor,
+    fontWeight: FontWeight = FontWeight.Normal
+) {
+    Text2(
+        modifier = modifier,
+        text = text,
+        style = Text2StyleToken.TitleMedium,
+        color = color,
+        fontWeight = fontWeight
+    )
 }
 
 
@@ -298,8 +317,21 @@ fun TitleSmall(text: String) {
 }
 
 @Composable
-fun BodyLarge(text: String) {
-    Text2(text = text, style = Text2StyleToken.BodyLarge, color = InputTextColor)
+fun BodyLarge(
+    modifier: Modifier,
+    text: String,
+    color: Color = InputTextColor,
+    textAlign: TextAlign = TextAlign.Unspecified,
+    fontWeight: FontWeight = FontWeight.Normal
+) {
+    Text2(
+        modifier = modifier,
+        text = text,
+        style = Text2StyleToken.BodyLarge,
+        color = color,
+        textAlign = textAlign,
+        fontWeight = fontWeight
+    )
 }
 
 @Composable
@@ -307,13 +339,33 @@ fun BodyMedium(
     modifier: Modifier = Modifier,
     text: String,
     color: Color = InputTextColor,
-    fontWeight: FontWeight = FontWeight.Normal
+    fontWeight: FontWeight = FontWeight.Normal,
+    textAlign: TextAlign = TextAlign.Unspecified
+) {
+    Text2(
+        modifier = modifier,
+        text = text,
+        color = color,
+        style = Text2StyleToken.BodyMedium,
+        fontWeight = fontWeight,
+        textAlign = textAlign
+    )
+}
+
+@Composable
+fun BodyMedium(
+    modifier: Modifier = Modifier,
+    text: AnnotatedString,
+    color: Color = InputTextColor,
+    fontWeight: FontWeight = FontWeight.Normal,
+    textAlign: TextAlign = TextAlign.Unspecified
 ) {
     Text2(
         modifier = modifier,
         text = text,
         color = color,
         fontWeight = fontWeight,
+        textAlign = textAlign
     )
 }
 
@@ -355,20 +407,46 @@ fun BodySmall(
 }
 
 @Composable
-fun LabelLarge(text: String) {
-    Text2(text = text, style = Text2StyleToken.LabelLarge, color = InputTextColor)
+fun LabelLarge(
+    modifier: Modifier = Modifier,
+    text: String,
+    color: Color = InputTextColor,
+    textAlign: TextAlign = TextAlign.Unspecified,
+    fontWeight: FontWeight = FontWeight.Normal
+) {
+    Text2(
+        modifier = modifier,
+        text = text,
+        style = Text2StyleToken.LabelLarge,
+        color = color,
+        fontWeight = fontWeight,
+        textAlign = textAlign
+    )
 }
 
 @Composable
-fun LabelMedium(text: String) {
-    Text2(text = text, style = Text2StyleToken.LabelMedium, color = InputTextColor)
+fun LabelMedium(
+    modifier: Modifier = Modifier,
+    text: String,
+    color: Color = InputTextColor,
+    textAlign: TextAlign = TextAlign.Unspecified,
+    fontWeight: FontWeight = FontWeight.Normal
+) {
+    Text2(
+        modifier = modifier,
+        text = text,
+        style = Text2StyleToken.LabelMedium,
+        color = color,
+        fontWeight = fontWeight,
+        textAlign = textAlign
+    )
 }
 
 
 @Composable
 fun LabelSmall(
     text: String,
-    modifier: Modifier,
+    modifier: Modifier = Modifier,
     color: Color = InputTextColor,
     fontWeight: FontWeight = FontWeight.Normal
 ) {
@@ -390,10 +468,10 @@ fun IconText(
         modifier = modifier.fillMaxWidth()
             .clip(shape)
             .defaultMinSize(minHeight = 48.dp)
-            .background(color = Color.White)
+            .background(color = MaterialTheme.colorScheme.extendedColors.widgetBg)
             .border(
                 width = 1.dp,
-                color = MaterialTheme.colorScheme.outlineVariant,
+                color = MaterialTheme.colorScheme.extendedColors.outline,
                 shape = shape
             ),
         verticalAlignment = Alignment.CenterVertically,
@@ -415,7 +493,7 @@ fun TransparentToolbar(onBackPressed: () -> Unit) {
                 },
                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                 contentDescription = null,
-                tint = InputTextColor
+                tint = MaterialTheme.colorScheme.extendedColors.textDark
             )
         },
         title = {
@@ -428,7 +506,7 @@ fun TransparentToolbar(onBackPressed: () -> Unit) {
 @Composable
 fun AlternateAccountOptions() {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(top = Padding.padding20Dp),
+        modifier = Modifier.fillMaxWidth().padding(top = Padding.padding24Dp),
         horizontalArrangement = Arrangement.Center
     ) {
         IconText(modifier = Modifier.width(160.dp), icon = {
@@ -438,9 +516,10 @@ fun AlternateAccountOptions() {
             )
         }, text = {
             BodyMedium(
-                modifier = Modifier.padding(start = Padding.padding4Dp),
+                modifier = Modifier.padding(start = Padding.padding8Dp),
                 text = stringResource(Res.string.signup_continue_with_google),
-                fontWeight = FontWeight.W700
+                fontWeight = FontWeight.W700,
+                color = MaterialTheme.colorScheme.extendedColors.textDark
             )
         })
 
@@ -453,11 +532,73 @@ fun AlternateAccountOptions() {
             )
         }, text = {
             BodyMedium(
-                modifier = Modifier.padding(start = Padding.padding4Dp),
+                modifier = Modifier.padding(start = Padding.padding8Dp),
                 text = stringResource(Res.string.signup_continue_with_facebook),
-                fontWeight = FontWeight.W700
+                fontWeight = FontWeight.W700,
+                color = MaterialTheme.colorScheme.extendedColors.textDark
             )
         })
+    }
+}
+
+@Composable
+fun ProfileAction(
+    modifier: Modifier = Modifier,
+    icon: ImageVector,
+    iconTint: Color,
+    iconBgColor: Color,
+    text: String,
+    desc: String,
+    trailing: @Composable () -> Unit,
+    onActionClick: () -> Unit
+) {
+    val shape1 = RoundedCornerShape(999.dp)
+    val shape2 = RoundedCornerShape(20.dp)
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(shape = shape2)
+            .background(
+                color = MaterialTheme.colorScheme.extendedColors.widgetBg, shape = shape2
+            ).clickable {
+                onActionClick()
+            }
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(
+                horizontal = Padding.padding16Dp, vertical = Padding.padding12Dp
+            ),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Padding.padding16Dp)
+        ) {
+            Box(
+                modifier = Modifier.padding(vertical = 4.dp).size(48.dp).background(
+                    color = iconBgColor, shape = shape1
+                )
+            ) {
+                Icon(
+                    modifier = Modifier.padding(8.dp).size(24.dp).align(Alignment.Center),
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = iconTint
+                )
+            }
+            Column {
+                BodyLarge(
+                    modifier = Modifier,
+                    text = text,
+                    color = MaterialTheme.colorScheme.extendedColors.textDark,
+                    fontWeight = FontWeight.Bold
+                )
+                BodyMedium(
+                    modifier = Modifier,
+                    text = desc,
+                    color = MaterialTheme.colorScheme.outlineVariant
+                )
+            }
+            Spacer(modifier = Modifier.weight(1f))
+            trailing()
+        }
     }
 }
 
@@ -485,17 +626,7 @@ fun LargeButtonPreview() {
 //            LabelLarge(text = "Label")
 //            LabelMedium(text = "Label")
 //            LabelSmall(text = "Label")
-            IconText(modifier = Modifier.fillMaxWidth(), icon = {
-                Image(
-                    imageVector = vectorResource(Res.drawable.ic_google_logo),
-                    contentDescription = null
-                )
-            }, text = {
-                BodyMedium(
-                    text = stringResource(Res.string.signup_continue_with_google),
-                    fontWeight = FontWeight.W700
-                )
-            })
+            AlternateAccountOptions()
         }
     }
 }

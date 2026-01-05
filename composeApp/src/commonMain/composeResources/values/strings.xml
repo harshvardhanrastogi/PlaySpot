@@ -23,4 +23,54 @@
     <string name="login_continue_with">Or continue with</string>
     <string name="login_signup_account">Don't have an account?</string>
     <string name="login_signup">Sign Up</string>
+    <string name="pref_choose_sport">Choose your sport</string>
+    <string name="pref_choose_sport_desc">Select the sports you are interested in playing or watching. We will customize your feed.</string>
+    <string name="pref_choose_sport_select_all">Select all</string>
+    <string name="pref_choose_sport_clear">Clear</string>
+    <string name="pref_choose_sport_continue">Continue</string>
+    <string name="pref_choose_sport_skip">Skip</string>
+    <string name="pref_choose_sport_search">Search sports</string>
+    <string-array name="pref_sports_list">
+        <item>Football</item>
+        <item>Basketball</item>
+        <item>Tennis</item>
+        <item>Running</item>
+        <item>Volleyball</item>
+        <item>Swimming</item>
+        <item>Cycling</item>
+        <item>Cricket</item>
+        <item>Baseball</item>
+        <item>Badminton</item>
+        <item>Gym</item>
+        <item>Golf</item>
+    </string-array>
+    <string name="pref_all_set_title"> You're all set!</string>
+    <string name="pref_set_up_complete_desc">Your sports preferences are saved. Now you're ready to jump into the action or personalize your profile further</string>
+    <string name="pref_set_up_complete_discover">Discover Matches</string>
+    <string name="pref_set_up_complete_find_games">Find games happening near you</string>
+    <string name="pref_set_up_complete_profile_edit">Complete Your Profile</string>
+    <string name="pref_set_up_complete_add_bio">Add a photo and bio</string>
+    <string name="pref_set_up_complete_note">You can change your preferences anytime in settings.</string>
+    <string name="pref_set_up_complete_do_later">I'll do this later</string>
+    <string name="pref_set_up_finish_profile">Finish your profile</string>
+    <string name="pref_set_up_finish_profile_desc">Help others get to know your play style and availability.</string>
+    <string name="pref_set_up_finish_profile_bio">Bio</string>
+    <string name="pref_set_up_finish_profile_bio_optional">(Optional)</string>
+    <string name="pref_set_up_finish_profile_skill_level">Skill Level</string>
+    <string name="pref_set_up_finish_profile_skill_level_casual">Casual</string>
+    <string name="pref_set_up_finish_profile_skill_level_casual_desc">Just for fun, no pressure</string>
+    <string name="pref_set_up_finish_profile_skill_level_competitive">Competitive</string>
+    <string name="pref_set_up_finish_profile_skill_level_competitive_desc">Played in leagues before</string>
+    <string name="pref_set_up_finish_profile_skill_level_pro">Pro</string>
+    <string name="pref_set_up_finish_profile_skill_level_pro_desc">High level experience</string>
+    <string name="pref_set_up_finish_profile_play_time_title">When do you usually play?</string>
+    <string-array name="pref_set_up_finish_profile_play_time">
+        <item>Mornings</item>
+        <item>Weeknights</item>
+        <item>Weekends</item>
+        <item>Flexible</item>
+    </string-array>
+    <string name="pref_set_up_finish_profile_save">Save Profile</string>
+    <string name="pref_set_up_finish_profile_skip">Skip for now</string>
+
 </resources>

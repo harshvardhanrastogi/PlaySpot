@@ -8,6 +8,10 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.harsh.playspot.ui.SplashScreen
 import com.harsh.playspot.ui.login.LoginScreenRoute
+import com.harsh.playspot.ui.profile.PersonalDetailsScreen
+import com.harsh.playspot.ui.profile.PersonalDetailsScreenRoute
+import com.harsh.playspot.ui.signup.PreferenceSetupCompleteRoute
+import com.harsh.playspot.ui.signup.PreferenceSetupRoute
 import com.harsh.playspot.ui.signup.SignupScreenRoute
 import kotlinx.serialization.Serializable
 
@@ -44,13 +48,30 @@ fun NavigationRoutes(onBackPressed: () -> Unit) {
         composable("Route.SignUp") {
             SignupScreenRoute(
                 onBackPressed = { navController.popBackStack() },
-                onLoginClicked = { navController.navigate("Route.Login") })
+                onLoginClicked = { navController.navigate("Route.Login") },
+                onSignUpSuccess = { navController.navigate("Route.SportPreference") })
         }
 
         composable("Route.Login") {
             LoginScreenRoute(onBackPressed = onBackPressed, onSignUpClicked = {
                 navController.navigate("Route.SignUp")
             })
+        }
+
+        composable("Route.SportPreference") {
+            PreferenceSetupRoute {
+                navController.navigate("Route.SportPreferenceComplete")
+            }
+        }
+
+        composable("Route.SportPreferenceComplete") {
+            PreferenceSetupCompleteRoute(onDiscoverClicked = {}, onCompleteProfileClicked = {
+                navController.navigate("Route.FinishProfile")
+            })
+        }
+
+        composable("Route.FinishProfile") {
+            PersonalDetailsScreenRoute()
         }
     }
 }
@@ -65,4 +86,6 @@ sealed class Route {
 
     @Serializable
     data object SignUp : Route()
+
+    data object SportPreference : Route()
 }

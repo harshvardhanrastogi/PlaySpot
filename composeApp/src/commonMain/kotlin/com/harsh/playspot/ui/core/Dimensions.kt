@@ -15,4 +15,7 @@ object Padding {
 
     val padding24Dp = 24.dp
     val padding32Dp = 32.dp
+    val padding56Dp = 56.dp
+    val padding64Dp = 64.dp
+
 }

@@ -23,13 +23,13 @@ import com.harsh.playspot.ui.core.BackgroundImageScreen
 import com.harsh.playspot.ui.core.BodyMedium
 import com.harsh.playspot.ui.core.BodySmall
 import com.harsh.playspot.ui.core.HeadlineLarge
-import com.harsh.playspot.ui.core.InputTextColor
 import com.harsh.playspot.ui.core.LabelSmall
 import com.harsh.playspot.ui.core.LargeButton
 import com.harsh.playspot.ui.core.Padding
 import com.harsh.playspot.ui.core.TextField
 import com.harsh.playspot.ui.core.TextFieldPassword
 import com.harsh.playspot.ui.core.TextMediumDark
+import com.harsh.playspot.ui.core.extendedColors
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import playspot.composeapp.generated.resources.Res
@@ -57,7 +57,7 @@ fun LoginScreen(onBackPressed: () -> Unit, onSignUpClicked: () -> Unit) {
         HeadlineLarge(
             modifier = Modifier.padding(top = Padding.padding24Dp),
             text = stringResource(Res.string.login_welcome_back),
-            fontWeight = FontWeight.Bold
+            fontWeight = FontWeight.Bold,
         )
         BodyMedium(
             modifier = Modifier.padding(
@@ -65,7 +65,7 @@ fun LoginScreen(onBackPressed: () -> Unit, onSignUpClicked: () -> Unit) {
                 top = Padding.padding12Dp
             ),
             text = stringResource(Res.string.login_join_squad),
-            color = InputTextColor
+            color = MaterialTheme.colorScheme.extendedColors.textDark
         )
 
         TextField(
@@ -102,16 +102,15 @@ fun LoginScreen(onBackPressed: () -> Unit, onSignUpClicked: () -> Unit) {
         )
 
         Row(
-            modifier = Modifier.fillMaxWidth().padding(top = Padding.padding16Dp),
+            modifier = Modifier.fillMaxWidth().padding(top = Padding.padding24Dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             HorizontalDivider(modifier = Modifier.weight(1f))
-            LabelSmall(
+            BodyMedium(
                 modifier = Modifier.wrapContentWidth()
                     .padding(horizontal = Padding.padding4Dp),
                 text = stringResource(Res.string.login_continue_with),
-                color = MaterialTheme.colorScheme.outlineVariant,
-                fontWeight = FontWeight.Bold
+                color = MaterialTheme.colorScheme.outlineVariant
             )
             HorizontalDivider(modifier = Modifier.weight(1f))
         }
@@ -136,7 +135,7 @@ fun LoginFooter(onSignUpClicked: () -> Unit) {
             append(stringResource(Res.string.login_signup))
         }
     }
-    BodySmall(
+    BodyMedium(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = Padding.padding24Dp)
@@ -144,7 +143,7 @@ fun LoginFooter(onSignUpClicked: () -> Unit) {
                 onSignUpClicked()
             },
         text = footerString,
-        color = TextMediumDark,
+        color = MaterialTheme.colorScheme.outlineVariant,
         textAlign = TextAlign.Center
     )
 }

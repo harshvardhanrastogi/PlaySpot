@@ -2,6 +2,7 @@ package com.harsh.playspot.ui.core
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -39,9 +40,9 @@ fun BackgroundImageScreen(
                         modifier = Modifier.matchParentSize().background(
                             brush = Brush.verticalGradient(
                                 colors = listOf(
-                                    MaterialTheme.colorScheme.surface.copy(alpha = 0.4f), // Start subtle
-                                    MaterialTheme.colorScheme.surface.copy(alpha = 0.8f), // Get darker
-                                    MaterialTheme.colorScheme.surface
+                                    MaterialTheme.colorScheme.background.copy(alpha = 0.3f), // Start subtle
+                                    MaterialTheme.colorScheme.background.copy(alpha = 0.8f), // Get darker
+                                    MaterialTheme.colorScheme.background
                                 )
                             )
                         )
@@ -65,6 +66,6 @@ fun BackgroundImageScreen(
 @Composable
 fun BackgroundImageScreenPreview() {
     BackgroundImageScreen({}) {
-        HeadlineLarge(text = "Get Started")
+        HeadlineLarge(text = "Get Started",)
     }
 }
