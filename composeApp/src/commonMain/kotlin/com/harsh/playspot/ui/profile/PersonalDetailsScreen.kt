@@ -32,6 +32,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -52,6 +54,7 @@ import com.harsh.playspot.ui.core.TextMediumDark
 import com.harsh.playspot.ui.core.TitleMedium
 import com.harsh.playspot.ui.core.TransparentToolbar
 import com.harsh.playspot.ui.core.extendedColors
+import com.harsh.playspot.ui.core.semiCircleCornerShape
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringArrayResource
 import org.jetbrains.compose.resources.stringResource
@@ -126,7 +129,7 @@ fun PersonalDetailsScreen() {
 
 @Composable
 fun UserSkillLevelSelection() {
-
+    val hapticFeedback = LocalHapticFeedback.current
     val skillLevels = remember { mutableStateOf(getSkillLevelStates()) }
     BodyLarge(
         modifier = Modifier.padding(
@@ -154,7 +157,10 @@ fun UserSkillLevelSelection() {
                 text = stringResource(levelState.title),
                 desc = stringResource(levelState.desc),
                 trailing = {
-                    RadioButton(selected = levelState.isSelected, onClick = onClick)
+                    RadioButton(selected = levelState.isSelected, onClick = {
+                        hapticFeedback.performHapticFeedback(HapticFeedbackType.SegmentTick)
+                        onClick()
+                    })
                 },
                 onActionClick = onClick
             )
@@ -272,22 +278,21 @@ fun UserPlayTimeSelection() {
                             vertical = Padding.padding16Dp
                         ),
                         text = state.text,
+                        color = Color.Unspecified,
                         fontWeight = FontWeight.W500,
-                        color = Color.Unspecified
                     )
                 },
-                shape = RoundedCornerShape(999.dp),
+                shape = semiCircleCornerShape,
                 border = null,
                 colors = FilterChipDefaults.filterChipColors(
-                    containerColor = MaterialTheme.colorScheme.extendedColors.widgetBg,
-                    selectedContainerColor = MaterialTheme.colorScheme.primary,
-                    labelColor = MaterialTheme.colorScheme.extendedColors.textDark,
-                    selectedLabelColor = Color.White
+                    containerColor = MaterialTheme.colorScheme.extendedColors.chipContainer,
+                    selectedContainerColor = MaterialTheme.colorScheme.extendedColors.selectedChipContainer,
+                    labelColor = MaterialTheme.colorScheme.extendedColors.chipText,
+                    selectedLabelColor = MaterialTheme.colorScheme.extendedColors.selectedChipText
                 )
             )
         }
     }
-
 }
 
 @Preview

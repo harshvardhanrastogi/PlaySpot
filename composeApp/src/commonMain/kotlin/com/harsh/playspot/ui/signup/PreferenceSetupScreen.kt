@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.DirectionsBike
 import androidx.compose.material.icons.automirrored.filled.DirectionsRun
@@ -45,6 +44,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.harsh.playspot.ui.core.AppTheme
@@ -57,6 +58,7 @@ import com.harsh.playspot.ui.core.TextLightGray
 import com.harsh.playspot.ui.core.TitleMedium
 import com.harsh.playspot.ui.core.TransparentToolbar
 import com.harsh.playspot.ui.core.extendedColors
+import com.harsh.playspot.ui.core.semiCircleCornerShape
 import org.jetbrains.compose.resources.stringArrayResource
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.resources.vectorResource
@@ -172,19 +174,19 @@ private fun SportPreferenceChip(text: String = "Football", vectorImage: ImageVec
     }
     val bgColor =
         if (state.value.isSelected) MaterialTheme.colorScheme.extendedColors.selectedChipContainer else MaterialTheme.colorScheme.extendedColors.chipContainer
-    val tintColor =
-        if (state.value.isSelected) MaterialTheme.colorScheme.onPrimary else Color(0xFF64748B)
     val textColor =
         if (state.value.isSelected) MaterialTheme.colorScheme.extendedColors.selectedChipText else MaterialTheme.colorScheme.extendedColors.chipText
-
+    val tintColor = textColor
     val ringBgColor =
         if (state.value.isSelected) Color.White.copy(alpha = 0.2f) else MaterialTheme.colorScheme.extendedColors.chipIconBg
-    val shape = RoundedCornerShape(999.dp)
+    val hapticFeedback = LocalHapticFeedback.current
+
     Box(
         modifier = Modifier
-            .clip(shape = shape)
-            .background(color = bgColor, shape = shape)
+            .clip(shape = semiCircleCornerShape)
+            .background(color = bgColor, shape = semiCircleCornerShape)
             .clickable {
+                hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                 state.value =
                     if (state.value.isSelected) SportChipState.UnSelected else SportChipState.Selected
             }) {
@@ -194,7 +196,7 @@ private fun SportPreferenceChip(text: String = "Football", vectorImage: ImageVec
         ) {
             Box(
                 modifier = Modifier.padding(vertical = 4.dp).padding(start = 4.dp).size(38.dp)
-                    .background(color = ringBgColor, shape = shape)
+                    .background(color = ringBgColor, shape = semiCircleCornerShape)
             ) {
                 Icon(
                     modifier = Modifier.padding(8.dp).size(24.dp),
@@ -207,7 +209,7 @@ private fun SportPreferenceChip(text: String = "Football", vectorImage: ImageVec
                 modifier = Modifier.padding(horizontal = Padding.padding16Dp),
                 text = text,
                 color = textColor,
-                fontWeight = FontWeight.W500
+                fontWeight = FontWeight.W500,
             )
 
             Box(

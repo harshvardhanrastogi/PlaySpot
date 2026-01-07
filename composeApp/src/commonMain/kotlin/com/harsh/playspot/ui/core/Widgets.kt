@@ -1,5 +1,12 @@
 package com.harsh.playspot.ui.core
 
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -19,20 +26,27 @@ import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.SportsBasketball
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.SelectableChipColors
+import androidx.compose.material3.SelectableChipElevation
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -40,8 +54,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -49,6 +67,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.harsh.playspot.ui.signup.SportChipState
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.resources.vectorResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
@@ -62,11 +81,15 @@ import playspot.composeapp.generated.resources.signup_continue_with_google
 fun LargeButton(
     modifier: Modifier = Modifier, label: String, enabled: Boolean = true, onClick: () -> Unit = {}
 ) {
+    val hapticFeedback = LocalHapticFeedback.current
     Button(
         enabled = enabled, modifier = modifier.height(60.dp), colors = ButtonDefaults.buttonColors(
             disabledContainerColor = DisabledOnSurface,
             disabledContentColor = MaterialTheme.colorScheme.onPrimary
-        ), onClick = onClick
+        ), onClick = {
+            hapticFeedback.performHapticFeedback(HapticFeedbackType.Confirm)
+            onClick()
+        }
     ) {
         Text2(text = label, style = Text2StyleToken.BodyLarge, fontWeight = FontWeight.SemiBold)
     }
@@ -85,18 +108,22 @@ fun TextField(
     trailingIcon: @Composable (() -> Unit)? = null,
     visualTransformation: VisualTransformation = VisualTransformation.None
 ) {
+    val hapticFeedback = LocalHapticFeedback.current
     val text = remember {
         mutableStateOf(text)
     }
     Column(modifier = modifier) {
         StaticLabel(staticLabelText)
         val shape = RoundedCornerShape(8.dp)
+
         OutlinedTextField(
-            modifier = Modifier.fillMaxWidth()
-                .background(
-                    color = MaterialTheme.colorScheme.extendedColors.widgetBg,
-                    shape = shape
-                ),
+            modifier = Modifier.fillMaxWidth().onFocusChanged { state ->
+                if (state.isFocused) {
+                    hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                }
+            }.background(
+                color = MaterialTheme.colorScheme.extendedColors.widgetBg, shape = shape
+            ),
             value = text.value,
             onValueChange = {
                 text.value = it
@@ -182,10 +209,11 @@ fun TextFieldPassword(
 fun PasswordTrailingIcon(onPasswordVisibilityChange: (Boolean) -> Unit = {}) {
     val passwordVisible = remember { mutableStateOf(false) }
     Icon(
-        modifier = Modifier.wrapContentWidth().clickable {
-            passwordVisible.value = !passwordVisible.value
-            onPasswordVisibilityChange(passwordVisible.value)
-        },
+        modifier = Modifier.wrapContentWidth()
+            .clickWithFeedback(if (passwordVisible.value) HapticFeedbackType.ToggleOn else HapticFeedbackType.ToggleOff) {
+                passwordVisible.value = !passwordVisible.value
+                onPasswordVisibilityChange(passwordVisible.value)
+            },
         imageVector = if (passwordVisible.value) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
         contentDescription = null
     )
@@ -299,14 +327,16 @@ fun TitleMedium(
     modifier: Modifier = Modifier,
     text: String,
     color: Color = InputTextColor,
-    fontWeight: FontWeight = FontWeight.Normal
+    fontWeight: FontWeight = FontWeight.Normal,
+    textAlign: TextAlign = TextAlign.Unspecified
 ) {
     Text2(
         modifier = modifier,
         text = text,
         style = Text2StyleToken.TitleMedium,
         color = color,
-        fontWeight = fontWeight
+        fontWeight = fontWeight,
+        textAlign = textAlign
     )
 }
 
@@ -465,11 +495,8 @@ fun IconText(
 ) {
     val shape = RoundedCornerShape(8.dp)
     Row(
-        modifier = modifier.fillMaxWidth()
-            .clip(shape)
-            .defaultMinSize(minHeight = 48.dp)
-            .background(color = MaterialTheme.colorScheme.extendedColors.widgetBg)
-            .border(
+        modifier = modifier.fillMaxWidth().clip(shape).defaultMinSize(minHeight = 48.dp)
+            .background(color = MaterialTheme.colorScheme.extendedColors.widgetBg).border(
                 width = 1.dp,
                 color = MaterialTheme.colorScheme.extendedColors.outline,
                 shape = shape
@@ -488,7 +515,9 @@ fun TransparentToolbar(onBackPressed: () -> Unit) {
     TopAppBar(
         navigationIcon = {
             Icon(
-                modifier = Modifier.minimumInteractiveComponentSize().clickable {
+                modifier = Modifier.minimumInteractiveComponentSize().clickWithFeedback(
+                    HapticFeedbackType.Confirm
+                ) {
                     onBackPressed()
                 },
                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
@@ -511,8 +540,7 @@ fun AlternateAccountOptions() {
     ) {
         IconText(modifier = Modifier.width(160.dp), icon = {
             Image(
-                imageVector = vectorResource(Res.drawable.ic_google_logo),
-                contentDescription = null
+                imageVector = vectorResource(Res.drawable.ic_google_logo), contentDescription = null
             )
         }, text = {
             BodyMedium(
@@ -552,18 +580,13 @@ fun ProfileAction(
     trailing: @Composable () -> Unit,
     onActionClick: () -> Unit
 ) {
-    val shape1 = RoundedCornerShape(999.dp)
     val shape2 = RoundedCornerShape(20.dp)
     Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(shape = shape2)
-            .background(
-                color = MaterialTheme.colorScheme.extendedColors.widgetBg, shape = shape2
-            ).clickable {
-                onActionClick()
-            }
-    ) {
+        modifier = modifier.fillMaxWidth().clip(shape = shape2).background(
+            color = MaterialTheme.colorScheme.extendedColors.widgetBg, shape = shape2
+        ).clickWithFeedback(HapticFeedbackType.SegmentTick) {
+            onActionClick()
+        }) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(
                 horizontal = Padding.padding16Dp, vertical = Padding.padding12Dp
@@ -573,7 +596,7 @@ fun ProfileAction(
         ) {
             Box(
                 modifier = Modifier.padding(vertical = 4.dp).size(48.dp).background(
-                    color = iconBgColor, shape = shape1
+                    color = iconBgColor, shape = semiCircleCornerShape
                 )
             ) {
                 Icon(
@@ -602,6 +625,135 @@ fun ProfileAction(
     }
 }
 
+@Composable
+fun FilterChip2(
+    selected: Boolean,
+    onClick: () -> Unit,
+    label: @Composable () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    leadingIcon: @Composable (() -> Unit)? = null,
+    trailingIcon: @Composable (() -> Unit)? = null,
+    shape: Shape = semiCircleCornerShape,
+    colors: SelectableChipColors = FilterChipDefaults.filterChipColors(),
+    elevation: SelectableChipElevation? = null,
+    border: BorderStroke? = null,
+) {
+    val hapticFeedback = LocalHapticFeedback.current
+    FilterChip(
+        selected = selected,
+        onClick = {
+            hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+            onClick()
+        },
+        label = label,
+        modifier = modifier,
+        enabled = enabled,
+        shape = shape,
+        border = border,
+        colors = colors,
+        elevation = elevation,
+        leadingIcon = leadingIcon,
+        trailingIcon = trailingIcon
+    )
+}
+
+
+@Composable
+fun SportChip(text: String, imageVector: ImageVector) {
+    val state: MutableState<SportChipState> = remember {
+        mutableStateOf(SportChipState.UnSelected)
+    }
+
+    val tintColor =
+        if (state.value.isSelected) MaterialTheme.colorScheme.extendedColors.selectedChipText else MaterialTheme.colorScheme.extendedColors.chipText
+    val ringBgColor =
+        if (state.value.isSelected) Color.White.copy(alpha = 0.2f) else MaterialTheme.colorScheme.extendedColors.chipIconBg
+
+    FilterChip2(
+        modifier = Modifier.defaultMinSize(minHeight = 38.dp),
+        selected = state.value.isSelected,
+        onClick = {
+            state.value =
+                if (state.value.isSelected) SportChipState.UnSelected else SportChipState.Selected
+
+        },
+        leadingIcon = {
+            /*Box(
+                modifier = Modifier.size(38.dp)
+                    .background(color = ringBgColor, shape = semiCircleCornerShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    modifier = Modifier.size(24.dp),
+                    imageVector = imageVector,
+                    contentDescription = null,
+                    tint = tintColor
+                )
+            }*/
+            Icon(
+                modifier = Modifier.size(38.dp)
+                    .background(color = ringBgColor, shape = semiCircleCornerShape),
+                imageVector = imageVector,
+                contentDescription = null,
+                tint = tintColor
+            )
+        },
+        label = {
+            TitleMedium(
+                text = text,
+                color = Color.Unspecified,
+                fontWeight = FontWeight.W500,
+                textAlign = TextAlign.Center
+            )
+        },
+        trailingIcon = {
+            Box(
+                modifier = Modifier.size(24.dp)
+            ) {
+                androidx.compose.animation.AnimatedVisibility(
+                    visible = state.value.isSelected,
+                    enter = fadeIn(animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy)) + scaleIn(
+                        animationSpec = spring(
+                            dampingRatio = Spring.DampingRatioMediumBouncy,
+                            stiffness = Spring.StiffnessLow
+                        )
+                    ),
+                    exit = fadeOut() + scaleOut()
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.CheckCircle,
+                        contentDescription = null,
+                        tint = tintColor
+                    )
+                }
+            }
+        },
+
+        colors = FilterChipDefaults.filterChipColors(
+            containerColor = MaterialTheme.colorScheme.extendedColors.chipContainer,
+            selectedContainerColor = MaterialTheme.colorScheme.extendedColors.selectedChipContainer,
+            labelColor = MaterialTheme.colorScheme.extendedColors.chipText,
+            selectedLabelColor = MaterialTheme.colorScheme.extendedColors.selectedChipText,
+            selectedTrailingIconColor = MaterialTheme.colorScheme.extendedColors.selectedChipText,
+            disabledTrailingIconColor = MaterialTheme.colorScheme.extendedColors.chipIconBg
+        )
+    )
+}
+
+val semiCircleCornerShape = RoundedCornerShape(999.dp)
+
+@Composable
+fun Modifier.clickWithFeedback(
+    hapticFeedbackType: HapticFeedbackType, onClick: () -> Unit
+): Modifier {
+    val hapticFeedback = LocalHapticFeedback.current
+    return this.clickable {
+        hapticFeedback.performHapticFeedback(hapticFeedbackType)
+        onClick()
+    }
+}
+
 
 @Preview(backgroundColor = 0xFF0000, showBackground = true)
 @Composable
@@ -627,6 +779,7 @@ fun LargeButtonPreview() {
 //            LabelMedium(text = "Label")
 //            LabelSmall(text = "Label")
             AlternateAccountOptions()
+            SportChip("Basketball", Icons.Filled.SportsBasketball)
         }
     }
 }

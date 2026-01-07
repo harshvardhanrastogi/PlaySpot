@@ -40,6 +40,7 @@ import com.harsh.playspot.ui.core.TextLightGray
 import com.harsh.playspot.ui.core.TextMediumDark
 import com.harsh.playspot.ui.core.TransparentToolbar
 import com.harsh.playspot.ui.core.extendedColors
+import com.harsh.playspot.ui.core.semiCircleCornerShape
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.resources.vectorResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
@@ -160,13 +161,12 @@ fun PreferenceSetupCompleteScreen(
 
 @Composable
 fun FooterNote() {
-    val shape = RoundedCornerShape(999.dp)
     Box(
         modifier = Modifier.fillMaxWidth()
             .padding(top = Padding.padding24Dp)
-            .border(width = 1.dp, color = Color(0xFFDBEAFE), shape = shape)
+            .border(width = 1.dp, color = Color(0xFFDBEAFE), shape = semiCircleCornerShape)
             .background(
-                shape = shape, color = Color(0xFFE3F2FD).copy(alpha = 0.5f)
+                shape = semiCircleCornerShape, color = Color(0xFFE3F2FD).copy(alpha = 0.5f)
             )
     ) {
         Row(

@@ -241,7 +241,7 @@ val OrangeDark = Color(0xFFFDBA74)   // orange-300 (Text/Icon Dark)
 val OrangeRing = Color(0xFFFFEDD5)   // orange-100 (Background Light)
 val OrangeRingDark = Color(0xFF7C2D12) // orange-900 (Background Dark)
 
-val WidgetBg = Color(0xFFF1F5F9)
+val WidgetBg = Color(0xFFFFFFFF)
 val WidgetBgDark = Color(0xFF232f48)
 
 
@@ -296,7 +296,7 @@ private val lightExtendedColors = ExtendedColors(
     outline = Color(0xFFE2E8F0),
     chipContainer = WidgetBg,
     selectedChipContainer = Color(0xff2563eb),
-    chipText = TextLighterGray,
+    chipText = Color(0xFF64748B),
     selectedChipText = Color.White,
     chipIconBg = Color(0xFFF1F5F9)
 )
