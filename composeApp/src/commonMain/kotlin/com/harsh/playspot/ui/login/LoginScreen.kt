@@ -65,7 +65,7 @@ fun LoginScreen(onBackPressed: () -> Unit, onSignUpClicked: () -> Unit) {
                 top = Padding.padding12Dp
             ),
             text = stringResource(Res.string.login_join_squad),
-            color = MaterialTheme.colorScheme.extendedColors.textDark
+            color = MaterialTheme.extendedColors.textDark
         )
 
         TextField(

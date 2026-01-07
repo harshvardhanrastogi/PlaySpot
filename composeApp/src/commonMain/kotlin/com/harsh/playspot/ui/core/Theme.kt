@@ -1,7 +1,6 @@
 package com.harsh.playspot.ui.core
 
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
@@ -319,7 +318,7 @@ private val darkExtendedColors = ExtendedColors(
     chipIconBg = Color(0x660F172A)
 )
 
-val ColorScheme.extendedColors: ExtendedColors
+val MaterialTheme.extendedColors: ExtendedColors
     @Composable
     get() = LocalExtendedColors.current
 

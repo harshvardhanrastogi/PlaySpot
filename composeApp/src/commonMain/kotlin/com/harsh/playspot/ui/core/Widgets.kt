@@ -122,7 +122,7 @@ fun TextField(
                     hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                 }
             }.background(
-                color = MaterialTheme.colorScheme.extendedColors.widgetBg, shape = shape
+                color = MaterialTheme.extendedColors.widgetBg, shape = shape
             ),
             value = text.value,
             onValueChange = {
@@ -152,7 +152,7 @@ fun TextField(
 
                 // Border/Indicator Colors
                 focusedBorderColor = MaterialTheme.colorScheme.primary,
-                unfocusedBorderColor = MaterialTheme.colorScheme.extendedColors.outline,
+                unfocusedBorderColor = MaterialTheme.extendedColors.outline,
 
                 cursorColor = MaterialTheme.colorScheme.primary
             ),
@@ -291,7 +291,7 @@ fun HeadlineLarge(
     modifier: Modifier = Modifier,
     text: String,
     fontWeight: FontWeight = FontWeight.Normal,
-    color: Color = MaterialTheme.colorScheme.extendedColors.textDark,
+    color: Color = MaterialTheme.extendedColors.textDark,
     textAlign: TextAlign = TextAlign.Unspecified
 ) {
     Text2(
@@ -496,9 +496,9 @@ fun IconText(
     val shape = RoundedCornerShape(8.dp)
     Row(
         modifier = modifier.fillMaxWidth().clip(shape).defaultMinSize(minHeight = 48.dp)
-            .background(color = MaterialTheme.colorScheme.extendedColors.widgetBg).border(
+            .background(color = MaterialTheme.extendedColors.widgetBg).border(
                 width = 1.dp,
-                color = MaterialTheme.colorScheme.extendedColors.outline,
+                color = MaterialTheme.extendedColors.outline,
                 shape = shape
             ),
         verticalAlignment = Alignment.CenterVertically,
@@ -522,7 +522,7 @@ fun TransparentToolbar(onBackPressed: () -> Unit) {
                 },
                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.extendedColors.textDark
+                tint = MaterialTheme.extendedColors.textDark
             )
         },
         title = {
@@ -547,7 +547,7 @@ fun AlternateAccountOptions() {
                 modifier = Modifier.padding(start = Padding.padding8Dp),
                 text = stringResource(Res.string.signup_continue_with_google),
                 fontWeight = FontWeight.W700,
-                color = MaterialTheme.colorScheme.extendedColors.textDark
+                color = MaterialTheme.extendedColors.textDark
             )
         })
 
@@ -563,7 +563,7 @@ fun AlternateAccountOptions() {
                 modifier = Modifier.padding(start = Padding.padding8Dp),
                 text = stringResource(Res.string.signup_continue_with_facebook),
                 fontWeight = FontWeight.W700,
-                color = MaterialTheme.colorScheme.extendedColors.textDark
+                color = MaterialTheme.extendedColors.textDark
             )
         })
     }
@@ -583,7 +583,7 @@ fun ProfileAction(
     val shape2 = RoundedCornerShape(20.dp)
     Box(
         modifier = modifier.fillMaxWidth().clip(shape = shape2).background(
-            color = MaterialTheme.colorScheme.extendedColors.widgetBg, shape = shape2
+            color = MaterialTheme.extendedColors.widgetBg, shape = shape2
         ).clickWithFeedback(HapticFeedbackType.SegmentTick) {
             onActionClick()
         }) {
@@ -610,7 +610,7 @@ fun ProfileAction(
                 BodyLarge(
                     modifier = Modifier,
                     text = text,
-                    color = MaterialTheme.colorScheme.extendedColors.textDark,
+                    color = MaterialTheme.extendedColors.textDark,
                     fontWeight = FontWeight.Bold
                 )
                 BodyMedium(
@@ -666,9 +666,9 @@ fun SportChip(text: String, imageVector: ImageVector) {
     }
 
     val tintColor =
-        if (state.value.isSelected) MaterialTheme.colorScheme.extendedColors.selectedChipText else MaterialTheme.colorScheme.extendedColors.chipText
+        if (state.value.isSelected) MaterialTheme.extendedColors.selectedChipText else MaterialTheme.extendedColors.chipText
     val ringBgColor =
-        if (state.value.isSelected) Color.White.copy(alpha = 0.2f) else MaterialTheme.colorScheme.extendedColors.chipIconBg
+        if (state.value.isSelected) Color.White.copy(alpha = 0.2f) else MaterialTheme.extendedColors.chipIconBg
 
     FilterChip2(
         modifier = Modifier.defaultMinSize(minHeight = 38.dp),
@@ -731,12 +731,12 @@ fun SportChip(text: String, imageVector: ImageVector) {
         },
 
         colors = FilterChipDefaults.filterChipColors(
-            containerColor = MaterialTheme.colorScheme.extendedColors.chipContainer,
-            selectedContainerColor = MaterialTheme.colorScheme.extendedColors.selectedChipContainer,
-            labelColor = MaterialTheme.colorScheme.extendedColors.chipText,
-            selectedLabelColor = MaterialTheme.colorScheme.extendedColors.selectedChipText,
-            selectedTrailingIconColor = MaterialTheme.colorScheme.extendedColors.selectedChipText,
-            disabledTrailingIconColor = MaterialTheme.colorScheme.extendedColors.chipIconBg
+            containerColor = MaterialTheme.extendedColors.chipContainer,
+            selectedContainerColor = MaterialTheme.extendedColors.selectedChipContainer,
+            labelColor = MaterialTheme.extendedColors.chipText,
+            selectedLabelColor = MaterialTheme.extendedColors.selectedChipText,
+            selectedTrailingIconColor = MaterialTheme.extendedColors.selectedChipText,
+            disabledTrailingIconColor = MaterialTheme.extendedColors.chipIconBg
         )
     )
 }

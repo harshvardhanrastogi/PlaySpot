@@ -131,8 +131,8 @@ fun PreferenceSetupCompleteScreen(
                 ProfileAction(
                     modifier = Modifier.padding(top = Padding.padding16Dp),
                     icon = vectorResource(Res.drawable.ic_person_edit),
-                    iconTint = MaterialTheme.colorScheme.extendedColors.purple,
-                    iconBgColor = MaterialTheme.colorScheme.extendedColors.purpleContainer,
+                    iconTint = MaterialTheme.extendedColors.purple,
+                    iconBgColor = MaterialTheme.extendedColors.purpleContainer,
                     text = stringResource(Res.string.pref_set_up_complete_profile_edit),
                     desc = stringResource(Res.string.pref_set_up_complete_add_bio),
                     trailing = {

@@ -136,7 +136,7 @@ fun UserSkillLevelSelection() {
             start = Padding.padding4Dp, top = Padding.padding24Dp
         ),
         text = stringResource(Res.string.pref_set_up_finish_profile_skill_level),
-        color = MaterialTheme.colorScheme.extendedColors.textDark,
+        color = MaterialTheme.extendedColors.textDark,
         fontWeight = FontWeight.Bold
     )
 
@@ -183,7 +183,7 @@ fun UserBioTextField() {
         text = buildAnnotatedString {
             withStyle(
                 style = SpanStyle(
-                    color = MaterialTheme.colorScheme.extendedColors.textDark,
+                    color = MaterialTheme.extendedColors.textDark,
                     fontWeight = FontWeight.ExtraBold
                 )
             ) {
@@ -202,7 +202,7 @@ fun UserBioTextField() {
             .fillMaxWidth()
             .height(180.dp)
             .background(
-                color = MaterialTheme.colorScheme.extendedColors.widgetBg, // bg-slate-100
+                color = MaterialTheme.extendedColors.widgetBg, // bg-slate-100
                 shape = shape
             )
     ) {
@@ -213,7 +213,7 @@ fun UserBioTextField() {
                 .padding(Padding.padding16Dp)
                 .padding(bottom = 20.dp), // Extra padding for the counter
             textStyle = Text2StyleToken.BodyMedium.toTextStyle()
-                .copy(color = MaterialTheme.colorScheme.extendedColors.textDark), // Changed to darker color for input readability
+                .copy(color = MaterialTheme.extendedColors.textDark), // Changed to darker color for input readability
             decorator = { innerTextField ->
                 Box {
                     if (textState.text.isEmpty()) {
@@ -250,7 +250,7 @@ fun UserPlayTimeSelection() {
             start = Padding.padding4Dp, top = Padding.padding24Dp
         ),
         text = stringResource(Res.string.pref_set_up_finish_profile_play_time_title),
-        color = MaterialTheme.colorScheme.extendedColors.textDark,
+        color = MaterialTheme.extendedColors.textDark,
         fontWeight = FontWeight.Bold
     )
 
@@ -285,10 +285,10 @@ fun UserPlayTimeSelection() {
                 shape = semiCircleCornerShape,
                 border = null,
                 colors = FilterChipDefaults.filterChipColors(
-                    containerColor = MaterialTheme.colorScheme.extendedColors.chipContainer,
-                    selectedContainerColor = MaterialTheme.colorScheme.extendedColors.selectedChipContainer,
-                    labelColor = MaterialTheme.colorScheme.extendedColors.chipText,
-                    selectedLabelColor = MaterialTheme.colorScheme.extendedColors.selectedChipText
+                    containerColor = MaterialTheme.extendedColors.chipContainer,
+                    selectedContainerColor = MaterialTheme.extendedColors.selectedChipContainer,
+                    labelColor = MaterialTheme.extendedColors.chipText,
+                    selectedLabelColor = MaterialTheme.extendedColors.selectedChipText
                 )
             )
         }
@@ -317,12 +317,12 @@ sealed class SkillLevel() {
 
         @Composable
         override fun iconTint(): Color {
-            return MaterialTheme.colorScheme.extendedColors.green
+            return MaterialTheme.extendedColors.green
         }
 
         @Composable
         override fun iconBgColor(): Color {
-            return MaterialTheme.colorScheme.extendedColors.greenContainer
+            return MaterialTheme.extendedColors.greenContainer
         }
     }
 
@@ -332,12 +332,12 @@ sealed class SkillLevel() {
 
         @Composable
         override fun iconTint(): Color {
-            return MaterialTheme.colorScheme.extendedColors.orange
+            return MaterialTheme.extendedColors.orange
         }
 
         @Composable
         override fun iconBgColor(): Color {
-            return MaterialTheme.colorScheme.extendedColors.orangeContainer
+            return MaterialTheme.extendedColors.orangeContainer
         }
     }
 
@@ -347,12 +347,12 @@ sealed class SkillLevel() {
 
         @Composable
         override fun iconTint(): Color {
-            return MaterialTheme.colorScheme.extendedColors.purple
+            return MaterialTheme.extendedColors.purple
         }
 
         @Composable
         override fun iconBgColor(): Color {
-            return MaterialTheme.colorScheme.extendedColors.purpleContainer
+            return MaterialTheme.extendedColors.purpleContainer
         }
     }
 }

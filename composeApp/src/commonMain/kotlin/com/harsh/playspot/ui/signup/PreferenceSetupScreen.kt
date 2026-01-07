@@ -96,7 +96,7 @@ fun PreferenceSetupScreen(onContinueClicked: () -> Unit = {}) {
                         start = Padding.padding4Dp, top = Padding.padding12Dp
                     ),
                     text = stringResource(Res.string.pref_choose_sport_desc),
-                    color = MaterialTheme.colorScheme.extendedColors.textDark
+                    color = MaterialTheme.extendedColors.textDark
                 )
                 SportPreferenceSelector()
                 Spacer(modifier = Modifier.weight(1f))
@@ -173,12 +173,12 @@ private fun SportPreferenceChip(text: String = "Football", vectorImage: ImageVec
         mutableStateOf(SportChipState.UnSelected)
     }
     val bgColor =
-        if (state.value.isSelected) MaterialTheme.colorScheme.extendedColors.selectedChipContainer else MaterialTheme.colorScheme.extendedColors.chipContainer
+        if (state.value.isSelected) MaterialTheme.extendedColors.selectedChipContainer else MaterialTheme.extendedColors.chipContainer
     val textColor =
-        if (state.value.isSelected) MaterialTheme.colorScheme.extendedColors.selectedChipText else MaterialTheme.colorScheme.extendedColors.chipText
+        if (state.value.isSelected) MaterialTheme.extendedColors.selectedChipText else MaterialTheme.extendedColors.chipText
     val tintColor = textColor
     val ringBgColor =
-        if (state.value.isSelected) Color.White.copy(alpha = 0.2f) else MaterialTheme.colorScheme.extendedColors.chipIconBg
+        if (state.value.isSelected) Color.White.copy(alpha = 0.2f) else MaterialTheme.extendedColors.chipIconBg
     val hapticFeedback = LocalHapticFeedback.current
 
     Box(

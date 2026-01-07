@@ -70,7 +70,7 @@ private fun SignUpScreen(
                 top = Padding.padding12Dp
             ),
             text = stringResource(Res.string.signup_find_squad),
-            color = MaterialTheme.colorScheme.extendedColors.textDark
+            color = MaterialTheme.extendedColors.textDark
         )
 
         TextField(
