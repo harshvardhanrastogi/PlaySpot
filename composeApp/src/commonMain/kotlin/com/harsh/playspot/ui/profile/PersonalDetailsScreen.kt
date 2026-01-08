@@ -53,6 +53,7 @@ import com.harsh.playspot.ui.core.TextLighterGray
 import com.harsh.playspot.ui.core.TextMediumDark
 import com.harsh.playspot.ui.core.TitleMedium
 import com.harsh.playspot.ui.core.TransparentToolbar
+import com.harsh.playspot.ui.core.clickWithFeedback
 import com.harsh.playspot.ui.core.extendedColors
 import com.harsh.playspot.ui.core.semiCircleCornerShape
 import org.jetbrains.compose.resources.StringResource
@@ -77,16 +78,28 @@ import playspot.composeapp.generated.resources.pref_set_up_finish_profile_skill_
 import playspot.composeapp.generated.resources.pref_set_up_finish_profile_skill_level_pro_desc
 
 @Composable
-fun PersonalDetailsScreenRoute() {
-    PersonalDetailsScreen()
+fun PersonalDetailsScreenRoute(
+    onSaveClicked: () -> Unit,
+    onBackPressed: () -> Unit,
+    onSkipClicked: () -> Unit
+) {
+    PersonalDetailsScreen(
+        onSaveClicked = onSaveClicked,
+        onBackPressed = onBackPressed,
+        onSkipClicked = onSkipClicked
+    )
 }
 
 
 @Composable
-fun PersonalDetailsScreen() {
+fun PersonalDetailsScreen(
+    onSaveClicked: () -> Unit,
+    onBackPressed: () -> Unit,
+    onSkipClicked: () -> Unit
+) {
     val scrollState = rememberScrollState()
     AppTheme {
-        Scaffold(topBar = { TransparentToolbar { } }) { paddingValues ->
+        Scaffold(topBar = { TransparentToolbar(onBackPressed = onBackPressed) }) { paddingValues ->
             Column(
                 modifier = Modifier.fillMaxSize().padding(paddingValues)
                     .padding(horizontal = Padding.padding16Dp)
@@ -112,10 +125,14 @@ fun PersonalDetailsScreen() {
 
                 LargeButton(
                     modifier = Modifier.fillMaxWidth().padding(top = 72.dp),
-                    label = stringResource(Res.string.pref_set_up_finish_profile_save)
+                    label = stringResource(Res.string.pref_set_up_finish_profile_save),
+                    onClick = onSaveClicked
                 )
                 LabelLarge(
                     modifier = Modifier.minimumInteractiveComponentSize()
+                        .clickWithFeedback(HapticFeedbackType.Confirm) {
+                            onSkipClicked()
+                        }
                         .align(Alignment.CenterHorizontally)
                         .padding(vertical = Padding.padding32Dp),
                     text = stringResource(Res.string.pref_set_up_complete_do_later),
@@ -298,7 +315,7 @@ fun UserPlayTimeSelection() {
 @Preview
 @Composable
 fun PersonalDetailsScreenPreview() {
-    PersonalDetailsScreen()
+    PersonalDetailsScreen({}, {}, {})
 }
 
 

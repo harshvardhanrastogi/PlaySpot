@@ -72,5 +72,24 @@
     </string-array>
     <string name="pref_set_up_finish_profile_save">Save Profile</string>
     <string name="pref_set_up_finish_profile_skip">Skip for now</string>
+    <string name="profile_picture_title">Show your game face!</string>
+    <string name="profile_picture_desc">Adding a photo helps captains and teammates recognize you at the match.</string>
+    <string name="profile_picture_choose_gallery">Choose from Gallery</string>
+    <string name="profile_picture_take_photo">Take Photo</string>
+    <string name="profile_picture_save_continue">Save &amp; Continue</string>
+    <string name="profile_picture_skip">Skip</string>
+    <string name="profile_title">Profile</string>
+    <string name="profile_edit">Edit Profile</string>
+    <string name="profile_stats_title">My Stats</string>
+    <string name="profile_stats_view_history">View History</string>
+    <string name="profile_stats_matches">Matches</string>
+    <string name="profile_stats_wins">Wins</string>
+    <string name="profile_stats_win_rate">Win Rate</string>
+    <string name="profile_my_sports">My Sports</string>
+    <string name="profile_settings">Settings</string>
+    <string name="profile_settings_notifications">Notifications</string>
+    <string name="profile_settings_privacy">Privacy &amp; Security</string>
+    <string name="profile_settings_help">Help &amp; Support</string>
+    <string name="profile_logout">Log Out</string>
 
 </resources>

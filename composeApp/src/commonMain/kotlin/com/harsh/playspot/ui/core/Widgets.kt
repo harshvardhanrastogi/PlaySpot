@@ -26,7 +26,9 @@ import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.SportsBasketball
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -37,6 +39,7 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.SelectableChipColors
@@ -74,6 +77,7 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 import playspot.composeapp.generated.resources.Res
 import playspot.composeapp.generated.resources.ic_facebook_logo
 import playspot.composeapp.generated.resources.ic_google_logo
+import playspot.composeapp.generated.resources.profile_picture_take_photo
 import playspot.composeapp.generated.resources.signup_continue_with_facebook
 import playspot.composeapp.generated.resources.signup_continue_with_google
 
@@ -92,6 +96,48 @@ fun LargeButton(
         }
     ) {
         Text2(text = label, style = Text2StyleToken.BodyLarge, fontWeight = FontWeight.SemiBold)
+    }
+}
+
+@Composable
+fun OutlinedPrimaryButton(
+    modifier: Modifier = Modifier,
+    label: String,
+    enabled: Boolean = true,
+    onClick: () -> Unit = {}
+) {
+    val hapticFeedback = LocalHapticFeedback.current
+    OutlinedButton(
+        onClick = {
+            hapticFeedback.performHapticFeedback(HapticFeedbackType.Confirm)
+            onClick()
+        },
+        modifier = modifier.height(44.dp),
+        enabled = enabled,
+        shape = RoundedCornerShape(8.dp),
+        colors = ButtonDefaults.outlinedButtonColors(
+            containerColor = MaterialTheme.extendedColors.widgetBg,
+            contentColor = MaterialTheme.colorScheme.primary,
+            disabledContentColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+        ),
+        border = BorderStroke(
+            width = 1.dp,
+            color = if (enabled) {
+                MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)
+            } else {
+                MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+            }
+        )
+    ) {
+        LabelLarge(
+            text = label,
+            fontWeight = FontWeight.Bold,
+            color = if (enabled) {
+                MaterialTheme.colorScheme.primary
+            } else {
+                MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+            }
+        )
     }
 }
 
@@ -269,19 +315,57 @@ fun Text2(
 
 
 @Composable
-fun DisplayLarge(text: String) {
-    Text2(text = text, style = Text2StyleToken.DisplayLarge, color = InputTextColor)
+fun DisplayLarge(
+    modifier: Modifier = Modifier,
+    text: String,
+    color: Color = Color.Unspecified,
+    fontWeight: FontWeight = FontWeight.Normal,
+    textAlign: TextAlign = TextAlign.Unspecified
+) {
+    Text2(
+        modifier = modifier,
+        text = text,
+        style = Text2StyleToken.DisplayLarge,
+        color = color,
+        fontWeight = fontWeight,
+        textAlign = textAlign
+    )
 }
 
 @Composable
-fun DisplayMedium(text: String) {
-    Text2(text = text, style = Text2StyleToken.DisplayMedium, color = TextMediumDark)
+fun DisplayMedium(
+    modifier: Modifier = Modifier,
+    text: String,
+    color: Color = Color.Unspecified,
+    fontWeight: FontWeight = FontWeight.Normal,
+    textAlign: TextAlign = TextAlign.Unspecified
+) {
+    Text2(
+        style = Text2StyleToken.DisplayMedium,
+        modifier = modifier,
+        text = text,
+        color = color,
+        fontWeight = fontWeight,
+        textAlign = textAlign
+    )
 }
 
 
 @Composable
-fun DisplaySmall(text: String) {
-    Text2(text = text, style = Text2StyleToken.DisplaySmall, color = InputTextColor)
+fun DisplaySmall(
+    modifier: Modifier = Modifier,
+    text: String,
+    color: Color = MaterialTheme.extendedColors.textDark,
+    fontWeight: FontWeight = FontWeight.Normal,
+    textAlign: TextAlign = TextAlign.Unspecified
+) {
+    Text2(
+        style = Text2StyleToken.DisplaySmall, modifier = modifier,
+        text = text,
+        color = color,
+        fontWeight = fontWeight,
+        textAlign = textAlign
+    )
 }
 
 
@@ -290,14 +374,14 @@ fun DisplaySmall(text: String) {
 fun HeadlineLarge(
     modifier: Modifier = Modifier,
     text: String,
-    fontWeight: FontWeight = FontWeight.Normal,
     color: Color = MaterialTheme.extendedColors.textDark,
+    fontWeight: FontWeight = FontWeight.Normal,
     textAlign: TextAlign = TextAlign.Unspecified
 ) {
     Text2(
         modifier = modifier,
-        text = text,
         style = Text2StyleToken.HeadlineLarge,
+        text = text,
         color = color,
         fontWeight = fontWeight,
         textAlign = textAlign
@@ -306,34 +390,73 @@ fun HeadlineLarge(
 
 //28 sp
 @Composable
-fun HeadlineMedium(text: String) {
-    Text2(text = text, style = Text2StyleToken.HeadlineMedium, color = InputTextColor)
-}
-
-//24 sp
-@Composable
-fun HeadlineSmall(text: String) {
-    Text2(text = text, style = Text2StyleToken.HeadlineSmall, color = InputTextColor)
-}
-
-//22 sp
-@Composable
-fun TitleLarge(text: String) {
-    Text2(text = text, style = Text2StyleToken.TitleLarge, color = InputTextColor)
-}
-
-@Composable
-fun TitleMedium(
+fun HeadlineMedium(
     modifier: Modifier = Modifier,
     text: String,
-    color: Color = InputTextColor,
+    color: Color = MaterialTheme.extendedColors.textDark,
     fontWeight: FontWeight = FontWeight.Normal,
     textAlign: TextAlign = TextAlign.Unspecified
 ) {
     Text2(
         modifier = modifier,
         text = text,
+        style = Text2StyleToken.HeadlineMedium,
+        color = color,
+        fontWeight = fontWeight,
+        textAlign = textAlign
+    )
+}
+
+//24 sp
+@Composable
+fun HeadlineSmall(
+    modifier: Modifier = Modifier,
+    text: String,
+    color: Color = MaterialTheme.extendedColors.textDark,
+    fontWeight: FontWeight = FontWeight.Normal,
+    textAlign: TextAlign = TextAlign.Unspecified
+) {
+    Text2(
+        style = Text2StyleToken.HeadlineSmall,
+        modifier = modifier,
+        text = text,
+        color = color,
+        fontWeight = fontWeight,
+        textAlign = textAlign
+    )
+}
+
+//22 sp
+@Composable
+fun TitleLarge(
+    modifier: Modifier = Modifier,
+    text: String,
+    color: Color = MaterialTheme.extendedColors.textDark,
+    fontWeight: FontWeight = FontWeight.Normal,
+    textAlign: TextAlign = TextAlign.Unspecified
+) {
+    Text2(
+        style = Text2StyleToken.TitleLarge,
+        modifier = modifier,
+        text = text,
+        color = color,
+        fontWeight = fontWeight,
+        textAlign = textAlign
+    )
+}
+
+@Composable
+fun TitleMedium(
+    modifier: Modifier = Modifier,
+    text: String,
+    color: Color = MaterialTheme.extendedColors.textDark,
+    fontWeight: FontWeight = FontWeight.Normal,
+    textAlign: TextAlign = TextAlign.Unspecified
+) {
+    Text2(
         style = Text2StyleToken.TitleMedium,
+        modifier = modifier,
+        text = text,
         color = color,
         fontWeight = fontWeight,
         textAlign = textAlign
@@ -342,15 +465,28 @@ fun TitleMedium(
 
 
 @Composable
-fun TitleSmall(text: String) {
-    Text2(text = text, style = Text2StyleToken.TitleSmall, color = InputTextColor)
+fun TitleSmall(
+    modifier: Modifier = Modifier,
+    text: String,
+    color: Color = MaterialTheme.extendedColors.textDark,
+    fontWeight: FontWeight = FontWeight.Normal,
+    textAlign: TextAlign = TextAlign.Unspecified
+) {
+    Text2(
+        style = Text2StyleToken.TitleSmall,
+        modifier = modifier,
+        text = text,
+        color = color,
+        fontWeight = fontWeight,
+        textAlign = textAlign
+    )
 }
 
 @Composable
 fun BodyLarge(
     modifier: Modifier,
     text: String,
-    color: Color = InputTextColor,
+    color: Color = MaterialTheme.extendedColors.textDark,
     textAlign: TextAlign = TextAlign.Unspecified,
     fontWeight: FontWeight = FontWeight.Normal
 ) {
@@ -368,7 +504,7 @@ fun BodyLarge(
 fun BodyMedium(
     modifier: Modifier = Modifier,
     text: String,
-    color: Color = InputTextColor,
+    color: Color = MaterialTheme.extendedColors.textDark,
     fontWeight: FontWeight = FontWeight.Normal,
     textAlign: TextAlign = TextAlign.Unspecified
 ) {
@@ -386,7 +522,7 @@ fun BodyMedium(
 fun BodyMedium(
     modifier: Modifier = Modifier,
     text: AnnotatedString,
-    color: Color = InputTextColor,
+    color: Color = MaterialTheme.extendedColors.textDark,
     fontWeight: FontWeight = FontWeight.Normal,
     textAlign: TextAlign = TextAlign.Unspecified
 ) {
@@ -404,7 +540,7 @@ fun BodyMedium(
 fun BodySmall(
     modifier: Modifier = Modifier,
     text: String,
-    color: Color = InputTextColor,
+    color: Color = MaterialTheme.extendedColors.textDark,
     textAlign: TextAlign = TextAlign.Unspecified,
     fontWeight: FontWeight = FontWeight.Normal
 ) {
@@ -422,7 +558,7 @@ fun BodySmall(
 fun BodySmall(
     modifier: Modifier = Modifier,
     text: AnnotatedString,
-    color: Color = InputTextColor,
+    color: Color = MaterialTheme.extendedColors.textDark,
     textAlign: TextAlign = TextAlign.Unspecified,
     fontWeight: FontWeight = FontWeight.Normal
 ) {
@@ -440,7 +576,7 @@ fun BodySmall(
 fun LabelLarge(
     modifier: Modifier = Modifier,
     text: String,
-    color: Color = InputTextColor,
+    color: Color = MaterialTheme.extendedColors.textDark,
     textAlign: TextAlign = TextAlign.Unspecified,
     fontWeight: FontWeight = FontWeight.Normal
 ) {
@@ -458,7 +594,7 @@ fun LabelLarge(
 fun LabelMedium(
     modifier: Modifier = Modifier,
     text: String,
-    color: Color = InputTextColor,
+    color: Color = MaterialTheme.extendedColors.textDark,
     textAlign: TextAlign = TextAlign.Unspecified,
     fontWeight: FontWeight = FontWeight.Normal
 ) {
@@ -477,15 +613,17 @@ fun LabelMedium(
 fun LabelSmall(
     text: String,
     modifier: Modifier = Modifier,
-    color: Color = InputTextColor,
-    fontWeight: FontWeight = FontWeight.Normal
+    color: Color = MaterialTheme.extendedColors.textDark,
+    fontWeight: FontWeight = FontWeight.Normal,
+    textAlign: TextAlign = TextAlign.Unspecified,
 ) {
     Text2(
         modifier = modifier,
         text = text,
         style = Text2StyleToken.LabelSmall,
         color = color,
-        fontWeight = fontWeight
+        fontWeight = fontWeight,
+        textAlign = textAlign
     )
 }
 
@@ -576,7 +714,7 @@ fun ProfileAction(
     iconTint: Color,
     iconBgColor: Color,
     text: String,
-    desc: String,
+    desc: String? = null,
     trailing: @Composable () -> Unit,
     onActionClick: () -> Unit
 ) {
@@ -613,11 +751,13 @@ fun ProfileAction(
                     color = MaterialTheme.extendedColors.textDark,
                     fontWeight = FontWeight.Bold
                 )
-                BodyMedium(
-                    modifier = Modifier,
-                    text = desc,
-                    color = MaterialTheme.colorScheme.outlineVariant
-                )
+                if (desc?.isNotEmpty() == true) {
+                    BodyMedium(
+                        modifier = Modifier,
+                        text = desc,
+                        color = MaterialTheme.colorScheme.outlineVariant
+                    )
+                }
             }
             Spacer(modifier = Modifier.weight(1f))
             trailing()
@@ -755,11 +895,11 @@ fun Modifier.clickWithFeedback(
 }
 
 
-@Preview(backgroundColor = 0xFF0000, showBackground = true)
+@Preview(backgroundColor = 0x666666, showBackground = true)
 @Composable
 fun LargeButtonPreview() {
     AppTheme {
-        Column {
+        Column(modifier = Modifier.padding(16.dp)) {
 //            LargeButton(modifier = Modifier.fillMaxWidth(), label = "Button")
             TextField(modifier = Modifier.fillMaxWidth())
 //            TextField(modifier = Modifier.fillMaxWidth(), isError = true)
@@ -780,6 +920,22 @@ fun LargeButtonPreview() {
 //            LabelSmall(text = "Label")
             AlternateAccountOptions()
             SportChip("Basketball", Icons.Filled.SportsBasketball)
+            ProfileAction(
+                icon = Icons.Filled.PhotoCamera,
+                iconTint = MaterialTheme.colorScheme.primary,
+                iconBgColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                text = stringResource(Res.string.profile_picture_take_photo),
+                desc = "",
+                trailing = {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.outline,
+                        modifier = Modifier.size(16.dp)
+                    )
+                },
+                onActionClick = { }
+            )
         }
     }
 }

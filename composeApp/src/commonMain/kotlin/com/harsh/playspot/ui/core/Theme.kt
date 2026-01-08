@@ -243,6 +243,33 @@ val OrangeRingDark = Color(0xFF7C2D12) // orange-900 (Background Dark)
 val WidgetBg = Color(0xFFFFFFFF)
 val WidgetBgDark = Color(0xFF232f48)
 
+// Amber colors
+private val Amber = Color(0xFFD97706)
+private val AmberDark = Color(0xFFF59E0B)
+private val AmberContainer = Color(0xFFFEF3C7)
+private val AmberContainerDark = Color(0xFF78350F)
+
+// Emerald colors
+private val Emerald = Color(0xFF059669)
+private val EmeraldDark = Color(0xFF10B981)
+private val EmeraldContainer = Color(0xFFD1FAE5)
+private val EmeraldContainerDark = Color(0xFF064E3B)
+
+// Indigo colors
+private val Indigo = Color(0xFF6366F1)
+private val IndigoDark = Color(0xFF818CF8)
+private val IndigoContainer = Color(0xFFE0E7FF)
+private val IndigoContainerDark = Color(0xFF3730A3)
+
+// Teal colors
+private val Teal = Color(0xFF0D9488)
+private val TealDark = Color(0xFF2DD4BF)
+private val TealContainer = Color(0xFFCCFBF1)
+private val TealContainerDark = Color(0xFF134E4A)
+
+// Red colors
+private val Red = Color(0xFFDC2626)
+private val RedDark = Color(0xFFF87171)
 
 data class ExtendedColors(
     val purple: Color,
@@ -251,6 +278,15 @@ data class ExtendedColors(
     val greenContainer: Color,
     val orange: Color,
     val orangeContainer: Color,
+    val amber: Color,
+    val amberContainer: Color,
+    val emerald: Color,
+    val emeraldContainer: Color,
+    val indigo: Color,
+    val indigoContainer: Color,
+    val teal: Color,
+    val tealContainer: Color,
+    val red: Color,
     val textDark: Color,
     val widgetBg: Color,
     val textMediumDark: Color,
@@ -270,6 +306,15 @@ val LocalExtendedColors = staticCompositionLocalOf {
         greenContainer = Color.Unspecified,
         orange = Color.Unspecified,
         orangeContainer = Color.Unspecified,
+        amber = Color.Unspecified,
+        amberContainer = Color.Unspecified,
+        emerald = Color.Unspecified,
+        emeraldContainer = Color.Unspecified,
+        indigo = Color.Unspecified,
+        indigoContainer = Color.Unspecified,
+        teal = Color.Unspecified,
+        tealContainer = Color.Unspecified,
+        red = Color.Unspecified,
         textDark = Color.Unspecified,
         widgetBg = Color.Unspecified,
         textMediumDark = Color.Unspecified,
@@ -289,6 +334,15 @@ private val lightExtendedColors = ExtendedColors(
     greenContainer = GreenRing,
     orange = Orange,
     orangeContainer = OrangeRing,
+    amber = Amber,
+    amberContainer = AmberContainer,
+    emerald = Emerald,
+    emeraldContainer = EmeraldContainer,
+    indigo = Indigo,
+    indigoContainer = IndigoContainer,
+    teal = Teal,
+    tealContainer = TealContainer,
+    red = Red,
     textDark = InputTextColor,
     widgetBg = WidgetBg,
     textMediumDark = TextMediumDark,
@@ -307,6 +361,15 @@ private val darkExtendedColors = ExtendedColors(
     greenContainer = GreenRingDark,
     orange = OrangeDark,
     orangeContainer = OrangeRingDark,
+    amber = AmberDark,
+    amberContainer = AmberContainerDark,
+    emerald = EmeraldDark,
+    emeraldContainer = EmeraldContainerDark,
+    indigo = IndigoDark,
+    indigoContainer = IndigoContainerDark,
+    teal = TealDark,
+    tealContainer = TealContainerDark,
+    red = RedDark,
     textDark = InputTextColorDark,
     widgetBg = WidgetBgDark,
     textMediumDark = TextMediumDarkTheme,

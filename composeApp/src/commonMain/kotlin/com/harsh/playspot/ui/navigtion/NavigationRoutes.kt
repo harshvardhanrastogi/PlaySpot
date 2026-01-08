@@ -8,8 +8,9 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.harsh.playspot.ui.SplashScreen
 import com.harsh.playspot.ui.login.LoginScreenRoute
-import com.harsh.playspot.ui.profile.PersonalDetailsScreen
+import com.harsh.playspot.ui.profile.AddProfilePictureScreenRoute
 import com.harsh.playspot.ui.profile.PersonalDetailsScreenRoute
+import com.harsh.playspot.ui.profile.ProfileScreenRoute
 import com.harsh.playspot.ui.signup.PreferenceSetupCompleteRoute
 import com.harsh.playspot.ui.signup.PreferenceSetupRoute
 import com.harsh.playspot.ui.signup.SignupScreenRoute
@@ -71,7 +72,27 @@ fun NavigationRoutes(onBackPressed: () -> Unit) {
         }
 
         composable("Route.FinishProfile") {
-            PersonalDetailsScreenRoute()
+            PersonalDetailsScreenRoute(
+                onBackPressed = { navController.popBackStack() },
+                onSaveClicked = { navController.navigate("Route.AddProfilePicture") },
+                onSkipClicked = { navController.navigate("Route.AddProfilePicture") }
+            )
+        }
+
+
+        composable("Route.AddProfilePicture") {
+            AddProfilePictureScreenRoute(
+                onBackPressed = { navController.popBackStack() },
+                onSkipClicked = { navController.navigate("Route.Profile") },
+                onSaveClicked = { navController.navigate("Route.Profile") }
+            )
+        }
+
+
+        composable("Route.Profile") {
+            ProfileScreenRoute(
+                onBackPressed = { navController.popBackStack() }
+            )
         }
     }
 }
