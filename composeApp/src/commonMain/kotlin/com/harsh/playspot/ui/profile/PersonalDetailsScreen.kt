@@ -30,6 +30,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -189,6 +190,7 @@ fun UserSkillLevelSelection() {
 
 @Composable
 fun UserBioTextField() {
+    val hapticFeedback = LocalHapticFeedback.current
     // Define the limit
     val charLimit = 200
     val textState = rememberTextFieldState(initialText = "")
@@ -228,7 +230,12 @@ fun UserBioTextField() {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(Padding.padding16Dp)
-                .padding(bottom = 20.dp), // Extra padding for the counter
+                .padding(bottom = 20.dp)
+                .onFocusChanged { state ->
+                    if (state.isFocused) {
+                        hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                    }
+                }, // Extra padding for the counter
             textStyle = Text2StyleToken.BodyMedium.toTextStyle()
                 .copy(color = MaterialTheme.extendedColors.textDark), // Changed to darker color for input readability
             decorator = { innerTextField ->
@@ -261,7 +268,7 @@ fun UserBioTextField() {
 fun UserPlayTimeSelection() {
     val chips = getPlayTimeChipsData()
     val selectedChips = remember { mutableStateOf(chips) }
-
+    val hapticFeedback = LocalHapticFeedback.current
     BodyLarge(
         modifier = Modifier.padding(
             start = Padding.padding4Dp, top = Padding.padding24Dp
@@ -281,6 +288,7 @@ fun UserPlayTimeSelection() {
         selectedChips.value.forEach { state ->
             FilterChip(
                 selected = state.isSelected, onClick = {
+                    hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                     selectedChips.value = selectedChips.value.map { item ->
                         if (item.text == state.text) {
                             item.copy(isSelected = !item.isSelected)
