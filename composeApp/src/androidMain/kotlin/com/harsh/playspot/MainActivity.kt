@@ -19,12 +19,16 @@ class MainActivity : ComponentActivity() {
             )
         )
         super.onCreate(savedInstanceState)
-
+        configureFirebaseServices()
         setContent {
             App(onBackPressed = {
                 finish()
             })
         }
+    }
+
+    private fun configureFirebaseServices() {
+
     }
 }
 

@@ -144,9 +144,11 @@ fun OutlinedPrimaryButton(
 @Composable
 fun TextField(
     modifier: Modifier = Modifier,
-    text: String = "",
+    value: String = "",
+    onValueChange: (String) -> Unit = {},
     style: Text2StyleToken = Text2StyleToken.BodyMedium,
     isError: Boolean = false,
+    errorText: String? = null,
     singleLine: Boolean = false,
     staticLabelText: String = "",
     placeHolderText: String = "",
@@ -155,9 +157,6 @@ fun TextField(
     visualTransformation: VisualTransformation = VisualTransformation.None
 ) {
     val hapticFeedback = LocalHapticFeedback.current
-    val text = remember {
-        mutableStateOf(text)
-    }
     Column(modifier = modifier) {
         StaticLabel(staticLabelText)
         val shape = RoundedCornerShape(8.dp)
@@ -170,10 +169,8 @@ fun TextField(
             }.background(
                 color = MaterialTheme.extendedColors.widgetBg, shape = shape
             ),
-            value = text.value,
-            onValueChange = {
-                text.value = it
-            },
+            value = value,
+            onValueChange = onValueChange,
             trailingIcon = trailingIcon,
             leadingIcon = leadingIcon,
             textStyle = style.toTextStyle(),
@@ -199,16 +196,20 @@ fun TextField(
                 // Border/Indicator Colors
                 focusedBorderColor = MaterialTheme.colorScheme.primary,
                 unfocusedBorderColor = MaterialTheme.extendedColors.outline,
+                errorBorderColor = MaterialTheme.colorScheme.error,
 
                 cursorColor = MaterialTheme.colorScheme.primary
             ),
             placeholder = {
                 Text2(text = placeHolderText, style = style)
             },
-            isError = isError,
+            isError = isError || errorText != null,
             singleLine = singleLine,
             visualTransformation = visualTransformation,
-            shape = shape
+            shape = shape,
+            supportingText = if (errorText != null) {
+                { LabelSmall(text = errorText, color = MaterialTheme.colorScheme.error) }
+            } else null
         )
     }
 }
@@ -216,9 +217,11 @@ fun TextField(
 @Composable
 fun TextFieldPassword(
     modifier: Modifier = Modifier,
-    text: String = "",
+    value: String = "",
+    onValueChange: (String) -> Unit = {},
     style: Text2StyleToken = Text2StyleToken.BodyMedium,
     isError: Boolean = false,
+    errorText: String? = null,
     singleLine: Boolean = false,
     staticLabelText: String = "",
     placeHolderText: String = "",
@@ -231,9 +234,11 @@ fun TextFieldPassword(
     }
     TextField(
         modifier = modifier,
-        text = text,
+        value = value,
+        onValueChange = onValueChange,
         style = style,
         isError = isError,
+        errorText = errorText,
         singleLine = singleLine,
         staticLabelText = staticLabelText,
         placeHolderText = placeHolderText,
@@ -629,22 +634,45 @@ fun LabelSmall(
 
 @Composable
 fun IconText(
-    modifier: Modifier = Modifier, icon: @Composable () -> Unit, text: @Composable () -> Unit
+    modifier: Modifier = Modifier,
+    icon: @Composable () -> Unit,
+    text: @Composable () -> Unit,
+    onClick: () -> Unit = {}
 ) {
-    val shape = RoundedCornerShape(8.dp)
-    Row(
-        modifier = modifier.fillMaxWidth().clip(shape).defaultMinSize(minHeight = 48.dp)
-            .background(color = MaterialTheme.extendedColors.widgetBg).border(
-                width = 1.dp,
-                color = MaterialTheme.extendedColors.outline,
-                shape = shape
-            ),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Center
-    ) {
-        icon()
-        text()
-    }
+    val hapticFeedback = LocalHapticFeedback.current
+    FilterChip(
+        selected = false,
+        onClick = {
+            hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+            onClick()
+        },
+        label = {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    icon()
+                    text()
+                }
+            }
+        },
+        modifier = modifier.defaultMinSize(minHeight = 48.dp),
+        shape = RoundedCornerShape(8.dp),
+        border = BorderStroke(
+            width = 1.dp,
+            color = MaterialTheme.extendedColors.outline
+        ),
+        colors = FilterChipDefaults.filterChipColors(
+            containerColor = MaterialTheme.extendedColors.widgetBg,
+            labelColor = MaterialTheme.extendedColors.textDark
+        )
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -722,9 +750,16 @@ fun ProfileAction(
     Box(
         modifier = modifier.fillMaxWidth().clip(shape = shape2).background(
             color = MaterialTheme.extendedColors.widgetBg, shape = shape2
-        ).clickWithFeedback(HapticFeedbackType.SegmentTick) {
-            onActionClick()
-        }) {
+        )
+            .border(
+                border = BorderStroke(
+                    width = 1.dp,
+                    color = MaterialTheme.extendedColors.outline
+                ),
+                shape = shape2
+            ).clickWithFeedback(HapticFeedbackType.SegmentTick) {
+                onActionClick()
+            }) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(
                 horizontal = Padding.padding16Dp, vertical = Padding.padding12Dp
@@ -745,14 +780,14 @@ fun ProfileAction(
                 )
             }
             Column {
-                BodyLarge(
+                LabelLarge(
                     modifier = Modifier,
                     text = text,
                     color = MaterialTheme.extendedColors.textDark,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.SemiBold
                 )
                 if (desc?.isNotEmpty() == true) {
-                    BodyMedium(
+                    LabelSmall(
                         modifier = Modifier,
                         text = desc,
                         color = MaterialTheme.colorScheme.outlineVariant

@@ -57,19 +57,25 @@ import playspot.composeapp.generated.resources.pref_set_up_complete_profile_edit
 
 @Composable
 fun PreferenceSetupCompleteRoute(
+    onBackPressed: () -> Unit = {},
     onDiscoverClicked: () -> Unit,
     onCompleteProfileClicked: () -> Unit
 ) {
-    PreferenceSetupCompleteScreen(onDiscoverClicked, onCompleteProfileClicked)
+    PreferenceSetupCompleteScreen(
+        onBackPressed = onBackPressed,
+        onDiscoverClicked = onDiscoverClicked,
+        onCompleteProfileClicked = onCompleteProfileClicked
+    )
 }
 
 @Composable
 fun PreferenceSetupCompleteScreen(
+    onBackPressed: () -> Unit = {},
     onDiscoverClicked: () -> Unit,
     onCompleteProfileClicked: () -> Unit
 ) {
     AppTheme {
-        Scaffold(topBar = { TransparentToolbar { } }) { paddingValues ->
+        Scaffold(topBar = { TransparentToolbar(onBackPressed = onBackPressed) }) { paddingValues ->
             Column(
                 modifier = Modifier.fillMaxSize().padding(paddingValues)
                     .padding(horizontal = Padding.padding16Dp)
@@ -191,5 +197,5 @@ fun FooterNote() {
 @Preview
 @Composable
 fun PreferenceSetupCompleteScreenPreview() {
-    PreferenceSetupCompleteScreen({}, {})
+    PreferenceSetupCompleteScreen({}, {}, {})
 }

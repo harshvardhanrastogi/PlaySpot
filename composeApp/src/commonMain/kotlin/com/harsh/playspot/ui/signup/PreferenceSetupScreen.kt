@@ -6,7 +6,9 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -73,15 +75,24 @@ import playspot.composeapp.generated.resources.pref_choose_sport_select_all
 import playspot.composeapp.generated.resources.pref_sports_list
 
 @Composable
-fun PreferenceSetupRoute(onContinueClicked: () -> Unit) {
-    PreferenceSetupScreen(onContinueClicked)
+fun PreferenceSetupRoute(
+    onBackPressed: () -> Unit = {},
+    onContinueClicked: () -> Unit
+) {
+    PreferenceSetupScreen(
+        onBackPressed = onBackPressed,
+        onContinueClicked = onContinueClicked
+    )
 }
 
 
 @Composable
-fun PreferenceSetupScreen(onContinueClicked: () -> Unit = {}) {
+fun PreferenceSetupScreen(
+    onBackPressed: () -> Unit = {},
+    onContinueClicked: () -> Unit = {}
+) {
     AppTheme {
-        Scaffold(topBar = { TransparentToolbar { } }) { paddingValues ->
+        Scaffold(topBar = { TransparentToolbar(onBackPressed = onBackPressed) }) { paddingValues ->
             Column(
                 modifier = Modifier.fillMaxSize().padding(paddingValues)
                     .padding(horizontal = Padding.padding16Dp)
@@ -184,7 +195,15 @@ private fun SportPreferenceChip(text: String = "Football", vectorImage: ImageVec
     Box(
         modifier = Modifier
             .clip(shape = semiCircleCornerShape)
+            .border(
+                border = BorderStroke(
+                    width = 1.dp,
+                    color = MaterialTheme.extendedColors.outline
+                ),
+                shape = semiCircleCornerShape
+            )
             .background(color = bgColor, shape = semiCircleCornerShape)
+
             .clickable {
                 hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                 state.value =

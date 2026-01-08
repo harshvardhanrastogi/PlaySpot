@@ -24,10 +24,14 @@ import playspot.composeapp.generated.resources.login_bg
 @Composable
 fun BackgroundImageScreen(
     onBackPressed: () -> Unit,
+    snackbarHost: @Composable () -> Unit = {},
     content: @Composable ColumnScope.(PaddingValues) -> Unit
 ) {
     AppTheme {
-        Scaffold(topBar = { TransparentToolbar(onBackPressed) }) { paddingValues ->
+        Scaffold(
+            topBar = { TransparentToolbar(onBackPressed) },
+            snackbarHost = snackbarHost
+        ) { paddingValues ->
             Box(modifier = Modifier.fillMaxSize()) {
                 Box {
                     Image(

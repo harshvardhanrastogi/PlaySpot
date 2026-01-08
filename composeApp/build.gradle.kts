@@ -1,3 +1,5 @@
+import com.codingfeline.buildkonfig.compiler.FieldSpec.Type.BOOLEAN
+import com.codingfeline.buildkonfig.compiler.FieldSpec.Type.STRING
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -5,6 +7,8 @@ plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
+    alias(libs.plugins.googleServices)
+    alias(libs.plugins.buildkonfig)
 }
 
 kotlin {
@@ -42,6 +46,10 @@ kotlin {
             implementation(compose.materialIconsExtended)
             implementation(libs.androidx.navigation)
             implementation(libs.kotlinx.serialization.json)
+            // KMPAuth - Firebase Authentication
+            implementation(libs.kmpauth.firebase)
+            implementation(libs.kmpauth.uihelper)
+            implementation(libs.kotlinx.coroutines.core)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

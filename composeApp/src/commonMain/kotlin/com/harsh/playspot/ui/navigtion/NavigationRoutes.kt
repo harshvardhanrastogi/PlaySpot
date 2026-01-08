@@ -6,7 +6,6 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.harsh.playspot.ui.SplashScreen
 import com.harsh.playspot.ui.login.LoginScreenRoute
 import com.harsh.playspot.ui.profile.AddProfilePictureScreenRoute
 import com.harsh.playspot.ui.profile.PersonalDetailsScreenRoute
@@ -19,7 +18,7 @@ import kotlinx.serialization.Serializable
 @Composable
 fun NavigationRoutes(onBackPressed: () -> Unit) {
     val navController = rememberNavController()
-    NavHost(navController = navController, startDestination = "Route.Splash", enterTransition = {
+    NavHost(navController = navController, startDestination = "Route.Login", enterTransition = {
         slideIntoContainer(
             towards = AnimatedContentTransitionScope.SlideDirection.Left,
             animationSpec = tween(700)
@@ -40,12 +39,6 @@ fun NavigationRoutes(onBackPressed: () -> Unit) {
             animationSpec = tween(700)
         )
     }) {
-        composable("Route.Splash") {
-            SplashScreen {
-                navController.navigate("Route.Login")
-            }
-        }
-
         composable("Route.SignUp") {
             SignupScreenRoute(
                 onBackPressed = { navController.popBackStack() },
@@ -54,21 +47,26 @@ fun NavigationRoutes(onBackPressed: () -> Unit) {
         }
 
         composable("Route.Login") {
-            LoginScreenRoute(onBackPressed = onBackPressed, onSignUpClicked = {
-                navController.navigate("Route.SignUp")
-            })
+            LoginScreenRoute(
+                onBackPressed = onBackPressed,
+                onSignUpClicked = { navController.navigate("Route.SignUp") },
+                onLoginSuccess = { navController.navigate("Route.SportPreference") }
+            )
         }
 
         composable("Route.SportPreference") {
-            PreferenceSetupRoute {
-                navController.navigate("Route.SportPreferenceComplete")
-            }
+            PreferenceSetupRoute(
+                onBackPressed = { navController.popBackStack() },
+                onContinueClicked = { navController.navigate("Route.SportPreferenceComplete") }
+            )
         }
 
         composable("Route.SportPreferenceComplete") {
-            PreferenceSetupCompleteRoute(onDiscoverClicked = {}, onCompleteProfileClicked = {
-                navController.navigate("Route.FinishProfile")
-            })
+            PreferenceSetupCompleteRoute(
+                onBackPressed = { navController.popBackStack() },
+                onDiscoverClicked = {},
+                onCompleteProfileClicked = { navController.navigate("Route.FinishProfile") }
+            )
         }
 
         composable("Route.FinishProfile") {

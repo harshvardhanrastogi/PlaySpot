@@ -11,23 +11,28 @@ import androidx.compose.material.icons.filled.Email
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.harsh.playspot.ui.core.AlternateAccountOptions
 import com.harsh.playspot.ui.core.BackgroundImageScreen
 import com.harsh.playspot.ui.core.BodyMedium
-import com.harsh.playspot.ui.core.BodySmall
 import com.harsh.playspot.ui.core.HeadlineLarge
-import com.harsh.playspot.ui.core.LabelSmall
 import com.harsh.playspot.ui.core.LargeButton
 import com.harsh.playspot.ui.core.Padding
 import com.harsh.playspot.ui.core.TextField
 import com.harsh.playspot.ui.core.TextFieldPassword
-import com.harsh.playspot.ui.core.TextMediumDark
 import com.harsh.playspot.ui.core.extendedColors
+import kotlinx.coroutines.flow.collectLatest
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import playspot.composeapp.generated.resources.Res
@@ -47,18 +52,48 @@ import playspot.composeapp.generated.resources.signup_password
 fun SignupScreenRoute(
     onBackPressed: () -> Unit,
     onLoginClicked: () -> Unit,
-    onSignUpSuccess: () -> Unit
+    onSignUpSuccess: () -> Unit,
+    viewModel: SignUpViewModel = viewModel { SignUpViewModel() }
 ) {
-    SignUpScreen(onBackPressed, onLoginClicked, onSignUpSuccess)
+    val uiState by viewModel.uiState.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(Unit) {
+        viewModel.events.collectLatest { event ->
+            when (event) {
+                is SignUpEvent.SignUpSuccess -> onSignUpSuccess()
+                is SignUpEvent.SignUpError -> snackbarHostState.showSnackbar(event.message)
+            }
+        }
+    }
+
+    SignUpScreen(
+        uiState = uiState,
+        snackbarHostState = snackbarHostState,
+        onBackPressed = onBackPressed,
+        onLoginClicked = onLoginClicked,
+        onEmailChange = viewModel::onEmailChange,
+        onPasswordChange = viewModel::onPasswordChange,
+        onConfirmPasswordChange = viewModel::onConfirmPasswordChange,
+        onSignUpClicked = viewModel::signUp
+    )
 }
 
 @Composable
 private fun SignUpScreen(
-    onBackPressed: () -> Unit,
+    uiState: SignUpUiState = SignUpUiState(),
+    snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
+    onBackPressed: () -> Unit = {},
     onLoginClicked: () -> Unit = {},
-    onSignUpSuccess: () -> Unit = {}
+    onEmailChange: (String) -> Unit = {},
+    onPasswordChange: (String) -> Unit = {},
+    onConfirmPasswordChange: (String) -> Unit = {},
+    onSignUpClicked: () -> Unit = {}
 ) {
-    BackgroundImageScreen(onBackPressed = onBackPressed) {
+    BackgroundImageScreen(
+        onBackPressed = onBackPressed,
+        snackbarHost = { SnackbarHost(snackbarHostState) }
+    ) {
         HeadlineLarge(
             modifier = Modifier.padding(top = Padding.padding24Dp),
             text = stringResource(Res.string.signup_get_start),
@@ -75,9 +110,13 @@ private fun SignUpScreen(
 
         TextField(
             modifier = Modifier.fillMaxWidth().padding(top = Padding.padding32Dp),
+            value = uiState.email,
+            onValueChange = onEmailChange,
             singleLine = true,
             staticLabelText = stringResource(Res.string.signup_email_address),
             placeHolderText = stringResource(Res.string.signup_enter_email),
+            isError = uiState.emailError != null,
+            errorText = uiState.emailError,
             trailingIcon = {
                 Icon(
                     imageVector = Icons.Filled.Email, contentDescription = null
@@ -86,22 +125,31 @@ private fun SignUpScreen(
 
         TextFieldPassword(
             modifier = Modifier.fillMaxWidth().padding(top = Padding.padding16Dp),
+            value = uiState.password,
+            onValueChange = onPasswordChange,
             singleLine = true,
             staticLabelText = stringResource(Res.string.signup_password),
-            placeHolderText = stringResource(Res.string.signup_create_password)
+            placeHolderText = stringResource(Res.string.signup_create_password),
+            isError = uiState.passwordError != null,
+            errorText = uiState.passwordError
         )
 
         TextFieldPassword(
             modifier = Modifier.fillMaxWidth().padding(top = Padding.padding16Dp),
+            value = uiState.confirmPassword,
+            onValueChange = onConfirmPasswordChange,
             singleLine = true,
             staticLabelText = stringResource(Res.string.signup_confirm_password),
             placeHolderText = stringResource(Res.string.signup_confirm_password),
+            isError = uiState.confirmPasswordError != null,
+            errorText = uiState.confirmPasswordError
         )
 
         LargeButton(
             modifier = Modifier.fillMaxWidth().padding(top = Padding.padding56Dp),
             label = stringResource(Res.string.signup_cta_signup),
-            onClick = onSignUpSuccess
+            enabled = !uiState.isLoading,
+            onClick = onSignUpClicked
         )
 
         Row(
@@ -154,8 +202,5 @@ private fun SignUpScreen(
 @Preview
 @Composable
 fun SignUpScreenPreview() {
-    SignUpScreen({})
+    SignUpScreen()
 }
-
-
-

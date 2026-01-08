@@ -10,7 +10,13 @@ import androidx.compose.material.icons.filled.Email
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.SpanStyle
@@ -18,18 +24,18 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.harsh.playspot.ui.core.AlternateAccountOptions
 import com.harsh.playspot.ui.core.BackgroundImageScreen
 import com.harsh.playspot.ui.core.BodyMedium
 import com.harsh.playspot.ui.core.BodySmall
 import com.harsh.playspot.ui.core.HeadlineLarge
-import com.harsh.playspot.ui.core.LabelSmall
 import com.harsh.playspot.ui.core.LargeButton
 import com.harsh.playspot.ui.core.Padding
 import com.harsh.playspot.ui.core.TextField
 import com.harsh.playspot.ui.core.TextFieldPassword
-import com.harsh.playspot.ui.core.TextMediumDark
 import com.harsh.playspot.ui.core.extendedColors
+import kotlinx.coroutines.flow.collectLatest
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import playspot.composeapp.generated.resources.Res
@@ -46,14 +52,53 @@ import playspot.composeapp.generated.resources.login_signup_account
 import playspot.composeapp.generated.resources.login_welcome_back
 
 @Composable
-fun LoginScreenRoute(onBackPressed: () -> Unit, onSignUpClicked: () -> Unit) {
-    LoginScreen(onBackPressed, onSignUpClicked)
+fun LoginScreenRoute(
+    onBackPressed: () -> Unit,
+    onSignUpClicked: () -> Unit,
+    onLoginSuccess: () -> Unit = {},
+    viewModel: LoginViewModel = viewModel { LoginViewModel() }
+) {
+    val uiState by viewModel.uiState.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(Unit) {
+        viewModel.events.collectLatest { event ->
+            when (event) {
+                is LoginEvent.LoginSuccess -> onLoginSuccess()
+                is LoginEvent.LoginError -> snackbarHostState.showSnackbar(event.message)
+                is LoginEvent.ForgotPasswordEmailSent -> snackbarHostState.showSnackbar("Password reset email sent")
+            }
+        }
+    }
+
+    LoginScreen(
+        uiState = uiState,
+        snackbarHostState = snackbarHostState,
+        onBackPressed = onBackPressed,
+        onSignUpClicked = onSignUpClicked,
+        onEmailChange = viewModel::onEmailChange,
+        onPasswordChange = viewModel::onPasswordChange,
+        onLoginClicked = viewModel::login,
+        onForgotPasswordClicked = viewModel::forgotPassword
+    )
 }
 
 
 @Composable
-fun LoginScreen(onBackPressed: () -> Unit, onSignUpClicked: () -> Unit) {
-    BackgroundImageScreen(onBackPressed) {
+fun LoginScreen(
+    uiState: LoginUiState = LoginUiState(),
+    snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
+    onBackPressed: () -> Unit = {},
+    onSignUpClicked: () -> Unit = {},
+    onEmailChange: (String) -> Unit = {},
+    onPasswordChange: (String) -> Unit = {},
+    onLoginClicked: () -> Unit = {},
+    onForgotPasswordClicked: () -> Unit = {}
+) {
+    BackgroundImageScreen(
+        onBackPressed = onBackPressed,
+        snackbarHost = { SnackbarHost(snackbarHostState) }
+    ) {
         HeadlineLarge(
             modifier = Modifier.padding(top = Padding.padding24Dp),
             text = stringResource(Res.string.login_welcome_back),
@@ -70,9 +115,13 @@ fun LoginScreen(onBackPressed: () -> Unit, onSignUpClicked: () -> Unit) {
 
         TextField(
             modifier = Modifier.fillMaxWidth().padding(top = Padding.padding32Dp),
+            value = uiState.email,
+            onValueChange = onEmailChange,
             singleLine = true,
             staticLabelText = stringResource(Res.string.login_label_email),
             placeHolderText = stringResource(Res.string.login_enter_email),
+            isError = uiState.emailError != null,
+            errorText = uiState.emailError,
             trailingIcon = {
                 Icon(
                     imageVector = Icons.Filled.Email, contentDescription = null
@@ -81,15 +130,20 @@ fun LoginScreen(onBackPressed: () -> Unit, onSignUpClicked: () -> Unit) {
 
         TextFieldPassword(
             modifier = Modifier.fillMaxWidth().padding(top = Padding.padding16Dp),
+            value = uiState.password,
+            onValueChange = onPasswordChange,
             singleLine = true,
             staticLabelText = stringResource(Res.string.login_label_password),
-            placeHolderText = stringResource(Res.string.login_enter_password)
+            placeHolderText = stringResource(Res.string.login_enter_password),
+            isError = uiState.passwordError != null,
+            errorText = uiState.passwordError
         )
 
         BodySmall(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = Padding.padding24Dp),
+                .padding(vertical = Padding.padding24Dp)
+                .clickable { onForgotPasswordClicked() },
             text = stringResource(Res.string.login_forgot_password),
             color = MaterialTheme.colorScheme.primary,
             textAlign = TextAlign.End,
@@ -98,7 +152,9 @@ fun LoginScreen(onBackPressed: () -> Unit, onSignUpClicked: () -> Unit) {
 
         LargeButton(
             modifier = Modifier.fillMaxWidth().padding(top = Padding.padding16Dp),
-            label = stringResource(Res.string.login_cta)
+            label = stringResource(Res.string.login_cta),
+            enabled = !uiState.isLoading,
+            onClick = onLoginClicked
         )
 
         Row(
@@ -152,5 +208,5 @@ fun LoginFooter(onSignUpClicked: () -> Unit) {
 @Preview
 @Composable
 fun LoginScreenPreview() {
-    LoginScreen({}, {})
+    LoginScreen()
 }
