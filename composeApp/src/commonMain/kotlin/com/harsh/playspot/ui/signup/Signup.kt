@@ -1,13 +1,16 @@
 package com.harsh.playspot.ui.signup
 
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -43,7 +46,9 @@ import playspot.composeapp.generated.resources.signup_create_password
 import playspot.composeapp.generated.resources.signup_cta_signup
 import playspot.composeapp.generated.resources.signup_email_address
 import playspot.composeapp.generated.resources.signup_enter_email
+import playspot.composeapp.generated.resources.signup_enter_full_name
 import playspot.composeapp.generated.resources.signup_find_squad
+import playspot.composeapp.generated.resources.signup_full_name
 import playspot.composeapp.generated.resources.signup_get_start
 import playspot.composeapp.generated.resources.signup_login_in
 import playspot.composeapp.generated.resources.signup_password
@@ -57,6 +62,7 @@ fun SignupScreenRoute(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
+    val scrollState = rememberScrollState()
 
     LaunchedEffect(Unit) {
         viewModel.events.collectLatest { event ->
@@ -69,9 +75,11 @@ fun SignupScreenRoute(
 
     SignUpScreen(
         uiState = uiState,
+        scrollState = scrollState,
         snackbarHostState = snackbarHostState,
         onBackPressed = onBackPressed,
         onLoginClicked = onLoginClicked,
+        onNameChange = viewModel::onFullNameChange,
         onEmailChange = viewModel::onEmailChange,
         onPasswordChange = viewModel::onPasswordChange,
         onConfirmPasswordChange = viewModel::onConfirmPasswordChange,
@@ -82,15 +90,18 @@ fun SignupScreenRoute(
 @Composable
 private fun SignUpScreen(
     uiState: SignUpUiState = SignUpUiState(),
+    scrollState: ScrollState,
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
     onBackPressed: () -> Unit = {},
     onLoginClicked: () -> Unit = {},
+    onNameChange: (String) -> Unit = {},
     onEmailChange: (String) -> Unit = {},
     onPasswordChange: (String) -> Unit = {},
     onConfirmPasswordChange: (String) -> Unit = {},
     onSignUpClicked: () -> Unit = {}
 ) {
     BackgroundImageScreen(
+        scrollState = scrollState,
         onBackPressed = onBackPressed,
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) {
@@ -110,6 +121,21 @@ private fun SignUpScreen(
 
         TextField(
             modifier = Modifier.fillMaxWidth().padding(top = Padding.padding32Dp),
+            value = uiState.fullName,
+            onValueChange = onNameChange,
+            singleLine = true,
+            staticLabelText = stringResource(Res.string.signup_full_name),
+            placeHolderText = stringResource(Res.string.signup_enter_full_name),
+            isError = uiState.fullNameError != null,
+            errorText = uiState.fullNameError,
+            trailingIcon = {
+                Icon(
+                    imageVector = Icons.Filled.Person, contentDescription = null
+                )
+            })
+
+        TextField(
+            modifier = Modifier.fillMaxWidth().padding(top = Padding.padding16Dp),
             value = uiState.email,
             onValueChange = onEmailChange,
             singleLine = true,
@@ -202,5 +228,5 @@ private fun SignUpScreen(
 @Preview
 @Composable
 fun SignUpScreenPreview() {
-    SignUpScreen()
+    SignUpScreen(scrollState = rememberScrollState())
 }

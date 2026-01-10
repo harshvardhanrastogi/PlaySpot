@@ -23,7 +23,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.automirrored.filled.Help
-import androidx.compose.material.icons.automirrored.filled.Logout
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Lock
@@ -33,7 +33,6 @@ import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.SportsBasketball
 import androidx.compose.material.icons.filled.SportsScore
 import androidx.compose.material.icons.filled.SportsTennis
-import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material.icons.filled.Verified
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -60,9 +59,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.harsh.playspot.ui.core.AppTheme
-import com.harsh.playspot.ui.core.BodyLarge
 import com.harsh.playspot.ui.core.BodyMedium
-import com.harsh.playspot.ui.core.BodySmall
 import com.harsh.playspot.ui.core.HeadlineMedium
 import com.harsh.playspot.ui.core.LabelLarge
 import com.harsh.playspot.ui.core.LabelSmall
@@ -346,7 +343,7 @@ private fun StatsSection(onViewHistoryClicked: () -> Unit) {
             )
             StatCard(
                 modifier = Modifier.weight(1f),
-                icon = Icons.Filled.TrendingUp,
+                icon = Icons.AutoMirrored.Filled.TrendingUp,
                 iconTint = MaterialTheme.extendedColors.emerald,
                 iconBgColor = MaterialTheme.extendedColors.emeraldContainer,
                 value = "75%",

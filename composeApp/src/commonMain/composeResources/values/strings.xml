@@ -1,6 +1,8 @@
 <resources>
     <string name="signup_get_start">Get Started</string>
     <string name="signup_find_squad">Find your squad and join the game</string>
+    <string name="signup_full_name">Full name</string>
+    <string name="signup_enter_full_name">Enter your full name</string>
     <string name="signup_email_address">Email address</string>
     <string name="signup_enter_email">Enter your email</string>
     <string name="signup_password">Password</string>

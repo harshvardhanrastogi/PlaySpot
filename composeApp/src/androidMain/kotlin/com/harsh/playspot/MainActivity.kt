@@ -8,6 +8,8 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import com.google.firebase.Firebase
+import com.google.firebase.auth.auth
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -21,19 +23,23 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         configureFirebaseServices()
         setContent {
-            App(onBackPressed = {
+            App(hasUserSession(), onBackPressed = {
                 finish()
             })
         }
     }
 
-    private fun configureFirebaseServices() {
+    private fun hasUserSession(): Boolean {
+        return Firebase.auth.currentUser != null
+    }
 
+    private fun configureFirebaseServices() {
+        Firebase.auth.useEmulator("192.168.29.221", 9099)
     }
 }
 
 @Preview
 @Composable
 fun AppAndroidPreview() {
-    App({})
+    App(hasUserSession = false, {})
 }

@@ -84,8 +84,8 @@ class AuthRepository private constructor() {
     }
 
     companion object {
-        private val instance: AuthRepository by lazy { AuthRepository() }
+        private val INSTANCE: AuthRepository by lazy { AuthRepository() }
 
-        fun getInstance(): AuthRepository = instance
+        fun getInstance(): AuthRepository = INSTANCE
     }
 }

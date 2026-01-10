@@ -22,7 +22,7 @@ data class SignUpUiState(
     val emailError: String? = null,
     val passwordError: String? = null,
     val confirmPasswordError: String? = null,
-    val agreedToTerms: Boolean = false,
+    val agreedToTerms: Boolean = true,
     val termsError: String? = null
 )
 

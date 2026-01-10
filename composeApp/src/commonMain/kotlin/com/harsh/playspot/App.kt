@@ -6,6 +6,6 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 
 @Composable
 @Preview
-fun App(onBackPressed: () -> Unit = {}) {
-    NavigationRoutes(onBackPressed)
+fun App(hasUserSession: Boolean = false, onBackPressed: () -> Unit = {}) {
+    NavigationRoutes(hasUserSession = hasUserSession,onBackPressed = onBackPressed)
 }

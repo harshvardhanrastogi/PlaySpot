@@ -16,9 +16,10 @@ import com.harsh.playspot.ui.signup.SignupScreenRoute
 import kotlinx.serialization.Serializable
 
 @Composable
-fun NavigationRoutes(onBackPressed: () -> Unit) {
+fun NavigationRoutes(hasUserSession: Boolean, onBackPressed: () -> Unit) {
     val navController = rememberNavController()
-    NavHost(navController = navController, startDestination = "Route.Login", enterTransition = {
+    val startScreen = if (hasUserSession) "Route.Profile" else "Route.Login"
+    NavHost(navController = navController, startDestination = startScreen, enterTransition = {
         slideIntoContainer(
             towards = AnimatedContentTransitionScope.SlideDirection.Left,
             animationSpec = tween(700)

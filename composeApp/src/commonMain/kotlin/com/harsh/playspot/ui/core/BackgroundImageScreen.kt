@@ -1,8 +1,8 @@
 package com.harsh.playspot.ui.core
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
@@ -23,6 +25,7 @@ import playspot.composeapp.generated.resources.login_bg
 
 @Composable
 fun BackgroundImageScreen(
+    scrollState: ScrollState = rememberScrollState(),
     onBackPressed: () -> Unit,
     snackbarHost: @Composable () -> Unit = {},
     content: @Composable ColumnScope.(PaddingValues) -> Unit
@@ -58,6 +61,7 @@ fun BackgroundImageScreen(
                     .fillMaxSize()
                     .padding(paddingValues)
                     .padding(horizontal = Padding.padding16Dp)
+                    .verticalScroll(state = scrollState)
             ) {
                 content(paddingValues)
             }
@@ -69,7 +73,10 @@ fun BackgroundImageScreen(
 @Preview
 @Composable
 fun BackgroundImageScreenPreview() {
-    BackgroundImageScreen({}) {
-        HeadlineLarge(text = "Get Started",)
-    }
+    BackgroundImageScreen(
+        onBackPressed = {},
+        content = {
+            HeadlineLarge(text = "Get Started",)
+        },
+    )
 }

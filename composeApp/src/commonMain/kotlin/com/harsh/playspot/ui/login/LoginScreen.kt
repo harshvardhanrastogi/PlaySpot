@@ -97,84 +97,85 @@ fun LoginScreen(
 ) {
     BackgroundImageScreen(
         onBackPressed = onBackPressed,
-        snackbarHost = { SnackbarHost(snackbarHostState) }
-    ) {
-        HeadlineLarge(
-            modifier = Modifier.padding(top = Padding.padding24Dp),
-            text = stringResource(Res.string.login_welcome_back),
-            fontWeight = FontWeight.Bold,
-        )
-        BodyMedium(
-            modifier = Modifier.padding(
-                start = Padding.padding4Dp,
-                top = Padding.padding12Dp
-            ),
-            text = stringResource(Res.string.login_join_squad),
-            color = MaterialTheme.extendedColors.textDark
-        )
-
-        TextField(
-            modifier = Modifier.fillMaxWidth().padding(top = Padding.padding32Dp),
-            value = uiState.email,
-            onValueChange = onEmailChange,
-            singleLine = true,
-            staticLabelText = stringResource(Res.string.login_label_email),
-            placeHolderText = stringResource(Res.string.login_enter_email),
-            isError = uiState.emailError != null,
-            errorText = uiState.emailError,
-            trailingIcon = {
-                Icon(
-                    imageVector = Icons.Filled.Email, contentDescription = null
-                )
-            })
-
-        TextFieldPassword(
-            modifier = Modifier.fillMaxWidth().padding(top = Padding.padding16Dp),
-            value = uiState.password,
-            onValueChange = onPasswordChange,
-            singleLine = true,
-            staticLabelText = stringResource(Res.string.login_label_password),
-            placeHolderText = stringResource(Res.string.login_enter_password),
-            isError = uiState.passwordError != null,
-            errorText = uiState.passwordError
-        )
-
-        BodySmall(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = Padding.padding24Dp)
-                .clickable { onForgotPasswordClicked() },
-            text = stringResource(Res.string.login_forgot_password),
-            color = MaterialTheme.colorScheme.primary,
-            textAlign = TextAlign.End,
-            fontWeight = FontWeight.Bold
-        )
-
-        LargeButton(
-            modifier = Modifier.fillMaxWidth().padding(top = Padding.padding16Dp),
-            label = stringResource(Res.string.login_cta),
-            enabled = !uiState.isLoading,
-            onClick = onLoginClicked
-        )
-
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(top = Padding.padding24Dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            HorizontalDivider(modifier = Modifier.weight(1f))
-            BodyMedium(
-                modifier = Modifier.wrapContentWidth()
-                    .padding(horizontal = Padding.padding4Dp),
-                text = stringResource(Res.string.login_continue_with),
-                color = MaterialTheme.colorScheme.outlineVariant
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        content = {
+            HeadlineLarge(
+                modifier = Modifier.padding(top = Padding.padding24Dp),
+                text = stringResource(Res.string.login_welcome_back),
+                fontWeight = FontWeight.Bold,
             )
-            HorizontalDivider(modifier = Modifier.weight(1f))
-        }
+            BodyMedium(
+                modifier = Modifier.padding(
+                    start = Padding.padding4Dp,
+                    top = Padding.padding12Dp
+                ),
+                text = stringResource(Res.string.login_join_squad),
+                color = MaterialTheme.extendedColors.textDark
+            )
 
-        AlternateAccountOptions()
+            TextField(
+                modifier = Modifier.fillMaxWidth().padding(top = Padding.padding32Dp),
+                value = uiState.email,
+                onValueChange = onEmailChange,
+                singleLine = true,
+                staticLabelText = stringResource(Res.string.login_label_email),
+                placeHolderText = stringResource(Res.string.login_enter_email),
+                isError = uiState.emailError != null,
+                errorText = uiState.emailError,
+                trailingIcon = {
+                    Icon(
+                        imageVector = Icons.Filled.Email, contentDescription = null
+                    )
+                })
 
-        LoginFooter(onSignUpClicked)
-    }
+            TextFieldPassword(
+                modifier = Modifier.fillMaxWidth().padding(top = Padding.padding16Dp),
+                value = uiState.password,
+                onValueChange = onPasswordChange,
+                singleLine = true,
+                staticLabelText = stringResource(Res.string.login_label_password),
+                placeHolderText = stringResource(Res.string.login_enter_password),
+                isError = uiState.passwordError != null,
+                errorText = uiState.passwordError
+            )
+
+            BodySmall(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = Padding.padding24Dp)
+                    .clickable { onForgotPasswordClicked() },
+                text = stringResource(Res.string.login_forgot_password),
+                color = MaterialTheme.colorScheme.primary,
+                textAlign = TextAlign.End,
+                fontWeight = FontWeight.Bold
+            )
+
+            LargeButton(
+                modifier = Modifier.fillMaxWidth().padding(top = Padding.padding16Dp),
+                label = stringResource(Res.string.login_cta),
+                enabled = !uiState.isLoading,
+                onClick = onLoginClicked
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(top = Padding.padding24Dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                HorizontalDivider(modifier = Modifier.weight(1f))
+                BodyMedium(
+                    modifier = Modifier.wrapContentWidth()
+                        .padding(horizontal = Padding.padding4Dp),
+                    text = stringResource(Res.string.login_continue_with),
+                    color = MaterialTheme.colorScheme.outlineVariant
+                )
+                HorizontalDivider(modifier = Modifier.weight(1f))
+            }
+
+            AlternateAccountOptions()
+
+            LoginFooter(onSignUpClicked)
+        },
+    )
 }
 
 @Composable
