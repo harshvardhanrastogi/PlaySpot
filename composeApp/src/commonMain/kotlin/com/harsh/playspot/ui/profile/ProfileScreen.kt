@@ -6,7 +6,6 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -34,18 +33,22 @@ import androidx.compose.material.icons.filled.SportsBasketball
 import androidx.compose.material.icons.filled.SportsScore
 import androidx.compose.material.icons.filled.SportsTennis
 import androidx.compose.material.icons.filled.Verified
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
@@ -58,8 +61,10 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.harsh.playspot.ui.core.AppTheme
 import com.harsh.playspot.ui.core.BodyMedium
+import com.harsh.playspot.ui.core.DangerButton
 import com.harsh.playspot.ui.core.HeadlineMedium
 import com.harsh.playspot.ui.core.LabelLarge
 import com.harsh.playspot.ui.core.LabelSmall
@@ -69,11 +74,15 @@ import com.harsh.playspot.ui.core.TitleLarge
 import com.harsh.playspot.ui.core.TitleMedium
 import com.harsh.playspot.ui.core.clickWithFeedback
 import com.harsh.playspot.ui.core.extendedColors
+import com.harsh.playspot.ui.core.getSportIcon
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import playspot.composeapp.generated.resources.Res
 import playspot.composeapp.generated.resources.cropped_circle_image
+import playspot.composeapp.generated.resources.pref_set_up_finish_profile_bio
+import playspot.composeapp.generated.resources.pref_set_up_finish_profile_play_time_title
+import playspot.composeapp.generated.resources.pref_set_up_finish_profile_skill_level
 import playspot.composeapp.generated.resources.profile_edit
 import playspot.composeapp.generated.resources.profile_logout
 import playspot.composeapp.generated.resources.profile_my_sports
@@ -90,9 +99,35 @@ import playspot.composeapp.generated.resources.profile_title
 
 @Composable
 fun ProfileScreenRoute(
-    onBackPressed: () -> Unit
+    onBackPressed: () -> Unit,
+    onLogoutSuccess: () -> Unit = {},
+    viewModel: ProfileViewModel = viewModel { ProfileViewModel() }
 ) {
-    ProfileScreen(onBackPressed = onBackPressed)
+    val uiState by viewModel.uiState.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(Unit) {
+        viewModel.events.collect { event ->
+            when (event) {
+                is ProfileEvent.LogoutSuccess -> onLogoutSuccess()
+                is ProfileEvent.LogoutError -> snackbarHostState.showSnackbar(event.message)
+            }
+        }
+    }
+
+    ProfileScreen(
+        onBackPressed = onBackPressed,
+        onLogoutClicked = { viewModel.logout() },
+        isLoggingOut = uiState.isLoggingOut,
+        snackbarHostState = snackbarHostState,
+        name = uiState.name,
+        username = uiState.username,
+        location = uiState.location,
+        bio = uiState.bio,
+        skillLevel = uiState.skillLevel,
+        playTimes = uiState.playTimes,
+        preferredSports = uiState.preferredSports
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -105,12 +140,22 @@ fun ProfileScreen(
     onNotificationsClicked: () -> Unit = {},
     onPrivacyClicked: () -> Unit = {},
     onHelpClicked: () -> Unit = {},
-    onLogoutClicked: () -> Unit = {}
+    onLogoutClicked: () -> Unit = {},
+    isLoggingOut: Boolean = false,
+    snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
+    name: String = "Alex Johnson",
+    username: String = "@alex_j",
+    location: String = "San Francisco, CA",
+    bio: String = "",
+    skillLevel: String = "",
+    playTimes: List<String> = emptyList(),
+    preferredSports: List<String> = emptyList()
 ) {
     val scrollState = rememberScrollState()
 
     AppTheme {
         Scaffold(
+            snackbarHost = { SnackbarHost(snackbarHostState) },
             topBar = {
                 TopAppBar(
                     navigationIcon = {
@@ -159,9 +204,9 @@ fun ProfileScreen(
             ) {
                 // Profile Header
                 ProfileHeader(
-                    name = "Alex Johnson",
-                    username = "@alex_j",
-                    location = "San Francisco, CA",
+                    name = name.ifEmpty { "Alex Johnson" },
+                    username = username.ifEmpty { "@alex_j" },
+                    location = location.ifEmpty { "San Francisco, CA" },
                     onEditProfileClicked = onEditProfileClicked
                 )
 
@@ -172,8 +217,26 @@ fun ProfileScreen(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
+                // Bio Section
+                if (bio.isNotEmpty()) {
+                    BioSection(bio = bio)
+                    Spacer(modifier = Modifier.height(24.dp))
+                }
+
+                // Skill Level Section
+                if (skillLevel.isNotEmpty()) {
+                    SkillLevelSection(skillLevel = skillLevel)
+                    Spacer(modifier = Modifier.height(24.dp))
+                }
+
+                // Play Time Section
+                if (playTimes.isNotEmpty()) {
+                    PlayTimeSection(playTimes = playTimes)
+                    Spacer(modifier = Modifier.height(24.dp))
+                }
+
                 // My Sports Section
-                MySportsSection()
+                MySportsSection(preferredSports = preferredSports)
 
                 Spacer(modifier = Modifier.height(24.dp))
 
@@ -182,7 +245,8 @@ fun ProfileScreen(
                     onNotificationsClicked = onNotificationsClicked,
                     onPrivacyClicked = onPrivacyClicked,
                     onHelpClicked = onHelpClicked,
-                    onLogoutClicked = onLogoutClicked
+                    onLogoutClicked = onLogoutClicked,
+                    isLoggingOut = isLoggingOut
                 )
 
                 Spacer(modifier = Modifier.height(100.dp)) // Bottom nav space
@@ -411,14 +475,7 @@ private fun StatCard(
 }
 
 @Composable
-private fun MySportsSection() {
-    // Sample sports data
-    val sports = listOf(
-        Triple(Icons.Filled.SportsBasketball, Color(0xFFF97316), "Basketball"),
-        Triple(Icons.Filled.SportsTennis, Color(0xFFEAB308), "Tennis"),
-        Triple(Icons.Filled.Pool, Color(0xFF3B82F6), "Swimming")
-    )
-
+private fun MySportsSection(preferredSports: List<String>) {
     Column(modifier = Modifier.padding(horizontal = Padding.padding16Dp)) {
         // Section Header
         TitleMedium(
@@ -431,19 +488,19 @@ private fun MySportsSection() {
         Spacer(modifier = Modifier.height(12.dp))
 
         // Sports Grid (2 columns)
-        val chunkedSports = sports.chunked(2)
+        val chunkedSports = preferredSports.chunked(2)
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             chunkedSports.forEach { rowItems ->
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    rowItems.forEach { (icon, tint, label) ->
+                    rowItems.forEach { sport ->
                         SportChip(
                             modifier = Modifier.weight(1f),
-                            icon = icon,
-                            iconTint = tint,
-                            label = label
+                            icon = getSportIcon(sport),
+                            iconTint = getSportColor(sport),
+                            label = sport
                         )
                     }
                     // If odd number of items, add the AddSportChip or spacer
@@ -453,7 +510,7 @@ private fun MySportsSection() {
                 }
             }
             // Add button row if even number of sports
-            if (sports.size % 2 == 0) {
+            if (preferredSports.size % 2 == 0) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -463,6 +520,24 @@ private fun MySportsSection() {
                 }
             }
         }
+    }
+}
+
+private fun getSportColor(sport: String): Color {
+    return when (sport) {
+        "Football" -> Color(0xFF22C55E)     // Green
+        "Basketball" -> Color(0xFFF97316)   // Orange
+        "Tennis" -> Color(0xFFEAB308)       // Yellow
+        "Running" -> Color(0xFFEC4899)      // Pink
+        "Volleyball" -> Color(0xFF8B5CF6)   // Purple
+        "Swimming" -> Color(0xFF3B82F6)     // Blue
+        "Cycling" -> Color(0xFF14B8A6)      // Teal
+        "Cricket" -> Color(0xFF10B981)      // Emerald
+        "Baseball" -> Color(0xFFEF4444)     // Red
+        "Badminton" -> Color(0xFF06B6D4)    // Cyan
+        "Gym" -> Color(0xFF6366F1)          // Indigo
+        "Golf" -> Color(0xFF84CC16)         // Lime
+        else -> Color(0xFF6B7280)           // Gray
     }
 }
 
@@ -494,6 +569,32 @@ private fun SportChip(
             tint = iconTint,
             modifier = Modifier.size(20.dp)
         )
+        LabelLarge(
+            text = label,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.extendedColors.textDark
+        )
+    }
+}
+
+@Composable
+private fun PlayTimeChip(
+    modifier: Modifier = Modifier,
+    label: String
+) {
+    val shape = RoundedCornerShape(12.dp)
+
+    Box(
+        modifier = modifier
+            .clip(shape)
+            .background(MaterialTheme.extendedColors.widgetBg)
+            .border(
+                width = 1.dp,
+                color = MaterialTheme.extendedColors.outline,
+                shape = shape
+            )
+            .padding(horizontal = Padding.padding16Dp, vertical = 14.dp)
+    ) {
         LabelLarge(
             text = label,
             fontWeight = FontWeight.SemiBold,
@@ -541,7 +642,8 @@ private fun SettingsSection(
     onNotificationsClicked: () -> Unit,
     onPrivacyClicked: () -> Unit,
     onHelpClicked: () -> Unit,
-    onLogoutClicked: () -> Unit
+    onLogoutClicked: () -> Unit,
+    isLoggingOut: Boolean = false
 ) {
     Column(modifier = Modifier.padding(horizontal = Padding.padding16Dp)) {
         // Section Header
@@ -606,22 +708,11 @@ private fun SettingsSection(
         Spacer(modifier = Modifier.height(16.dp))
 
         // Logout Button
-        Button(
-            onClick = onLogoutClicked,
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color.Transparent,
-                contentColor = MaterialTheme.extendedColors.red
-            ),
-            contentPadding = PaddingValues(16.dp)
-        ) {
-            LabelLarge(
-                text = stringResource(Res.string.profile_logout),
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.extendedColors.red
-            )
-        }
+        DangerButton(
+            label = stringResource(Res.string.profile_logout),
+            isLoading = isLoggingOut,
+            onClick = onLogoutClicked
+        )
     }
 }
 
@@ -677,8 +768,143 @@ private fun SettingsItem(
     }
 }
 
+@Composable
+private fun BioSection(bio: String) {
+    val shape = RoundedCornerShape(12.dp)
+
+    Column(modifier = Modifier.padding(horizontal = Padding.padding16Dp)) {
+        // Section Header
+        TitleMedium(
+            modifier = Modifier.padding(horizontal = Padding.padding4Dp),
+            text = stringResource(Res.string.pref_set_up_finish_profile_bio),
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.extendedColors.textDark
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // Bio Text
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(shape)
+                .background(MaterialTheme.extendedColors.widgetBg)
+                .border(
+                    width = 1.dp,
+                    color = MaterialTheme.extendedColors.outline,
+                    shape = shape
+                )
+                .padding(Padding.padding16Dp)
+        ) {
+            BodyMedium(
+                text = bio,
+                color = MaterialTheme.extendedColors.textDark
+            )
+        }
+    }
+}
+
+@Composable
+private fun SkillLevelSection(skillLevel: String) {
+    val skillLevelStates = getSkillLevelStates()
+    val selectedSkillLevelState = skillLevelStates.find { it.skillLevel.name == skillLevel }
+        ?: return
+
+    Column(modifier = Modifier.padding(horizontal = Padding.padding16Dp)) {
+        // Section Header
+        TitleMedium(
+            modifier = Modifier.padding(horizontal = Padding.padding4Dp),
+            text = stringResource(Res.string.pref_set_up_finish_profile_skill_level),
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.extendedColors.textDark
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // Selected Skill Level Card
+        val shape = RoundedCornerShape(12.dp)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(shape)
+                .background(MaterialTheme.extendedColors.widgetBg)
+                .border(
+                    width = 1.dp,
+                    color = MaterialTheme.extendedColors.outline,
+                    shape = shape
+                )
+                .padding(Padding.padding16Dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            // Icon background
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(selectedSkillLevelState.skillLevel.iconBgColor()),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = selectedSkillLevelState.skillLevel.iconRes,
+                    contentDescription = null,
+                    tint = selectedSkillLevelState.skillLevel.iconTint(),
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+
+            Column {
+                LabelLarge(
+                    text = stringResource(selectedSkillLevelState.title),
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.extendedColors.textDark
+                )
+                LabelSmall(
+                    text = stringResource(selectedSkillLevelState.desc),
+                    color = MaterialTheme.colorScheme.outlineVariant,
+                    fontWeight = FontWeight.Medium
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun PlayTimeSection(playTimes: List<String>) {
+    Column(modifier = Modifier.padding(horizontal = Padding.padding16Dp)) {
+        // Section Header
+        TitleMedium(
+            modifier = Modifier.padding(horizontal = Padding.padding4Dp),
+            text = stringResource(Res.string.pref_set_up_finish_profile_play_time_title),
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.extendedColors.textDark
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // Play Time Chips
+        val shape = RoundedCornerShape(12.dp)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            playTimes.forEach { playTime ->
+                PlayTimeChip(label = playTime)
+            }
+        }
+    }
+}
+
 @Preview
 @Composable
 fun ProfileScreenPreview() {
     ProfileScreen()
+}
+
+@Preview
+@Composable
+fun ChipPreview() {
+    AppTheme {
+        PlayTimeChip(label = "Weeknights")
+    }
 }

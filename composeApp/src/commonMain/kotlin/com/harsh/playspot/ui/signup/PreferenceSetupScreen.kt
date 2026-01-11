@@ -36,10 +36,13 @@ import androidx.compose.material.icons.filled.SportsVolleyball
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -50,6 +53,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.harsh.playspot.ui.core.AppTheme
 import com.harsh.playspot.ui.core.BodyLarge
 import com.harsh.playspot.ui.core.HeadlineLarge
@@ -60,7 +64,9 @@ import com.harsh.playspot.ui.core.TextLightGray
 import com.harsh.playspot.ui.core.TitleMedium
 import com.harsh.playspot.ui.core.TransparentToolbar
 import com.harsh.playspot.ui.core.extendedColors
+import com.harsh.playspot.ui.core.getSportIcon
 import com.harsh.playspot.ui.core.semiCircleCornerShape
+import kotlinx.coroutines.flow.collectLatest
 import org.jetbrains.compose.resources.stringArrayResource
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.resources.vectorResource
@@ -77,22 +83,51 @@ import playspot.composeapp.generated.resources.pref_sports_list
 @Composable
 fun PreferenceSetupRoute(
     onBackPressed: () -> Unit = {},
-    onContinueClicked: () -> Unit
+    onContinueClicked: () -> Unit,
+    viewModel: PreferenceSetupViewModel = viewModel { PreferenceSetupViewModel() }
 ) {
+    val uiState by viewModel.uiState.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val sports = stringArrayResource(Res.array.pref_sports_list)
+
+    LaunchedEffect(Unit) {
+        viewModel.events.collectLatest { event ->
+            when (event) {
+                is PreferenceSetupEvent.SaveSuccess -> onContinueClicked()
+                is PreferenceSetupEvent.SaveError -> snackbarHostState.showSnackbar(event.message)
+            }
+        }
+    }
+
     PreferenceSetupScreen(
+        uiState = uiState,
+        snackbarHostState = snackbarHostState,
+        sports = sports,
         onBackPressed = onBackPressed,
-        onContinueClicked = onContinueClicked
+        onSportToggle = viewModel::toggleSport,
+        onSelectAll = { viewModel.selectAll(sports) },
+        onClearAll = viewModel::clearAll,
+        onContinueClicked = viewModel::savePreferences
     )
 }
 
 
 @Composable
 fun PreferenceSetupScreen(
+    uiState: PreferenceSetupUiState = PreferenceSetupUiState(),
+    snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
+    sports: List<String> = emptyList(),
     onBackPressed: () -> Unit = {},
+    onSportToggle: (String) -> Unit = {},
+    onSelectAll: () -> Unit = {},
+    onClearAll: () -> Unit = {},
     onContinueClicked: () -> Unit = {}
 ) {
     AppTheme {
-        Scaffold(topBar = { TransparentToolbar(onBackPressed = onBackPressed) }) { paddingValues ->
+        Scaffold(
+            topBar = { TransparentToolbar(onBackPressed = onBackPressed) },
+            snackbarHost = { SnackbarHost(snackbarHostState) }
+        ) { paddingValues ->
             Column(
                 modifier = Modifier.fillMaxSize().padding(paddingValues)
                     .padding(horizontal = Padding.padding16Dp)
@@ -109,11 +144,19 @@ fun PreferenceSetupScreen(
                     text = stringResource(Res.string.pref_choose_sport_desc),
                     color = MaterialTheme.extendedColors.textDark
                 )
-                SportPreferenceSelector()
+                SportPreferenceSelector(
+                    sports = sports,
+                    selectedSports = uiState.selectedSports,
+                    onSportToggle = onSportToggle,
+                    onSelectAll = onSelectAll,
+                    onClearAll = onClearAll
+                )
                 Spacer(modifier = Modifier.weight(1f))
                 LargeButton(
                     modifier = Modifier.fillMaxWidth().padding(bottom = Padding.padding16Dp),
                     label = stringResource(Res.string.pref_choose_sport_continue),
+                    isLoading = uiState.isLoading,
+                    enabled = uiState.selectedSports.isNotEmpty(),
                     onClick = onContinueClicked
                 )
             }
@@ -123,15 +166,27 @@ fun PreferenceSetupScreen(
 
 
 @Composable
-private fun SportPreferenceSelector() {
-    val sports = stringArrayResource(Res.array.pref_sports_list)
+private fun SportPreferenceSelector(
+    sports: List<String>,
+    selectedSports: Set<String>,
+    onSportToggle: (String) -> Unit,
+    onSelectAll: () -> Unit,
+    onClearAll: () -> Unit
+) {
+    val hapticFeedback = LocalHapticFeedback.current
+    
     Column(modifier = Modifier.padding(top = Padding.padding32Dp)) {
         FlowRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             sports.forEach { sport ->
-                SportPreferenceChip(text = sport, getSportIcon(sport))
+                SportPreferenceChip(
+                    text = sport,
+                    vectorImage = getSportIcon(sport),
+                    isSelected = selectedSports.contains(sport),
+                    onClick = { onSportToggle(sport) }
+                )
             }
         }
         Row(
@@ -142,14 +197,24 @@ private fun SportPreferenceSelector() {
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             LabelLarge(
-                modifier = Modifier.minimumInteractiveComponentSize(),
+                modifier = Modifier
+                    .minimumInteractiveComponentSize()
+                    .clickable {
+                        hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                        onSelectAll()
+                    },
                 text = stringResource(Res.string.pref_choose_sport_select_all),
                 fontWeight = FontWeight.SemiBold,
                 color = TextLightGray
             )
 
             LabelLarge(
-                modifier = Modifier.minimumInteractiveComponentSize(),
+                modifier = Modifier
+                    .minimumInteractiveComponentSize()
+                    .clickable {
+                        hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                        onClearAll()
+                    },
                 text = stringResource(Res.string.pref_choose_sport_clear),
                 fontWeight = FontWeight.SemiBold,
                 color = TextLightGray
@@ -158,38 +223,21 @@ private fun SportPreferenceSelector() {
     }
 }
 
-@Composable
-private fun getSportIcon(sport: String): ImageVector {
-    return when (sport) {
-        "Football" -> Icons.Filled.SportsSoccer
-        "Basketball" -> Icons.Filled.SportsBasketball
-        "Tennis" -> Icons.Filled.SportsTennis
-        "Running" -> Icons.AutoMirrored.Filled.DirectionsRun
-        "Volleyball" -> Icons.Filled.SportsVolleyball
-        "Swimming" -> Icons.Filled.Pool
-        "Cycling" -> Icons.AutoMirrored.Filled.DirectionsBike
-        "Cricket" -> Icons.Filled.SportsCricket
-        "Baseball" -> Icons.Filled.SportsBaseball
-        "Badminton" -> vectorResource(Res.drawable.ic_badminton)
-        "Gym" -> Icons.Filled.FitnessCenter
-        "Golf" -> Icons.Filled.SportsGolf
-        else -> throw IllegalStateException()
-    }
-}
-
 
 @Composable
-private fun SportPreferenceChip(text: String = "Football", vectorImage: ImageVector) {
-    val state: MutableState<SportChipState> = remember {
-        mutableStateOf(SportChipState.UnSelected)
-    }
+private fun SportPreferenceChip(
+    text: String = "Football",
+    vectorImage: ImageVector,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
     val bgColor =
-        if (state.value.isSelected) MaterialTheme.extendedColors.selectedChipContainer else MaterialTheme.extendedColors.chipContainer
+        if (isSelected) MaterialTheme.extendedColors.selectedChipContainer else MaterialTheme.extendedColors.chipContainer
     val textColor =
-        if (state.value.isSelected) MaterialTheme.extendedColors.selectedChipText else MaterialTheme.extendedColors.chipText
+        if (isSelected) MaterialTheme.extendedColors.selectedChipText else MaterialTheme.extendedColors.chipText
     val tintColor = textColor
     val ringBgColor =
-        if (state.value.isSelected) Color.White.copy(alpha = 0.2f) else MaterialTheme.extendedColors.chipIconBg
+        if (isSelected) Color.White.copy(alpha = 0.2f) else MaterialTheme.extendedColors.chipIconBg
     val hapticFeedback = LocalHapticFeedback.current
 
     Box(
@@ -206,8 +254,7 @@ private fun SportPreferenceChip(text: String = "Football", vectorImage: ImageVec
 
             .clickable {
                 hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                state.value =
-                    if (state.value.isSelected) SportChipState.UnSelected else SportChipState.Selected
+                onClick()
             }) {
         Row(
             horizontalArrangement = Arrangement.SpaceEvenly,
@@ -235,7 +282,7 @@ private fun SportPreferenceChip(text: String = "Football", vectorImage: ImageVec
                 modifier = Modifier.padding(end = 8.dp).size(24.dp)
             ) {
                 androidx.compose.animation.AnimatedVisibility(
-                    visible = state.value.isSelected,
+                    visible = isSelected,
                     enter = fadeIn(animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy)) + scaleIn(
                         animationSpec = spring(
                             dampingRatio = Spring.DampingRatioMediumBouncy,

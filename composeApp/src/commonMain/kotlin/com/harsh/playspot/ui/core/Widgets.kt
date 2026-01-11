@@ -14,6 +14,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
@@ -27,13 +28,24 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
+import androidx.compose.material.icons.automirrored.filled.DirectionsBike
+import androidx.compose.material.icons.automirrored.filled.DirectionsRun
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.PhotoCamera
+import androidx.compose.material.icons.filled.Pool
+import androidx.compose.material.icons.filled.SportsBaseball
 import androidx.compose.material.icons.filled.SportsBasketball
+import androidx.compose.material.icons.filled.SportsCricket
+import androidx.compose.material.icons.filled.SportsGolf
+import androidx.compose.material.icons.filled.SportsSoccer
+import androidx.compose.material.icons.filled.SportsTennis
+import androidx.compose.material.icons.filled.SportsVolleyball
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
@@ -75,6 +87,7 @@ import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.resources.vectorResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import playspot.composeapp.generated.resources.Res
+import playspot.composeapp.generated.resources.ic_badminton
 import playspot.composeapp.generated.resources.ic_facebook_logo
 import playspot.composeapp.generated.resources.ic_google_logo
 import playspot.composeapp.generated.resources.profile_picture_take_photo
@@ -83,19 +96,34 @@ import playspot.composeapp.generated.resources.signup_continue_with_google
 
 @Composable
 fun LargeButton(
-    modifier: Modifier = Modifier, label: String, enabled: Boolean = true, onClick: () -> Unit = {}
+    modifier: Modifier = Modifier,
+    label: String,
+    enabled: Boolean = true,
+    isLoading: Boolean = false,
+    onClick: () -> Unit = {}
 ) {
     val hapticFeedback = LocalHapticFeedback.current
     Button(
-        enabled = enabled, modifier = modifier.height(60.dp), colors = ButtonDefaults.buttonColors(
-            disabledContainerColor = DisabledOnSurface,
+        enabled = enabled && !isLoading,
+        modifier = modifier.height(60.dp),
+        colors = ButtonDefaults.buttonColors(
+            disabledContainerColor = if (isLoading) MaterialTheme.colorScheme.primary else DisabledOnSurface,
             disabledContentColor = MaterialTheme.colorScheme.onPrimary
-        ), onClick = {
+        ),
+        onClick = {
             hapticFeedback.performHapticFeedback(HapticFeedbackType.Confirm)
             onClick()
         }
     ) {
-        Text2(text = label, style = Text2StyleToken.BodyLarge, fontWeight = FontWeight.SemiBold)
+        if (isLoading) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(24.dp),
+                color = MaterialTheme.colorScheme.onPrimary,
+                strokeWidth = 2.dp
+            )
+        } else {
+            Text2(text = label, style = Text2StyleToken.BodyLarge, fontWeight = FontWeight.SemiBold)
+        }
     }
 }
 
@@ -138,6 +166,49 @@ fun OutlinedPrimaryButton(
                 MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
             }
         )
+    }
+}
+
+@Composable
+fun DangerButton(
+    modifier: Modifier = Modifier,
+    label: String,
+    enabled: Boolean = true,
+    isLoading: Boolean = false,
+    onClick: () -> Unit = {}
+) {
+    val hapticFeedback = LocalHapticFeedback.current
+    val dangerColor = MaterialTheme.extendedColors.red
+    
+    Button(
+        onClick = {
+            hapticFeedback.performHapticFeedback(HapticFeedbackType.Confirm)
+            onClick()
+        },
+        modifier = modifier.fillMaxWidth(),
+        enabled = enabled && !isLoading,
+        shape = RoundedCornerShape(12.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = Color.Transparent,
+            contentColor = dangerColor,
+            disabledContainerColor = Color.Transparent,
+            disabledContentColor = dangerColor.copy(alpha = 0.5f)
+        ),
+        contentPadding = PaddingValues(16.dp)
+    ) {
+        if (isLoading) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(20.dp),
+                color = dangerColor,
+                strokeWidth = 2.dp
+            )
+        } else {
+            LabelLarge(
+                text = label,
+                fontWeight = FontWeight.SemiBold,
+                color = if (enabled) dangerColor else dangerColor.copy(alpha = 0.5f)
+            )
+        }
     }
 }
 
@@ -971,9 +1042,31 @@ fun LargeButtonPreview() {
                 },
                 onActionClick = { }
             )
+            LargeButton(modifier = Modifier.fillMaxWidth(), "", isLoading = true)
+            DangerButton(modifier = Modifier.fillMaxWidth(), "", isLoading = true)
         }
     }
 }
+
+@Composable
+fun getSportIcon(sport: String): ImageVector {
+    return when (sport) {
+        "Football" -> Icons.Filled.SportsSoccer
+        "Basketball" -> Icons.Filled.SportsBasketball
+        "Tennis" -> Icons.Filled.SportsTennis
+        "Running" -> Icons.AutoMirrored.Filled.DirectionsRun
+        "Volleyball" -> Icons.Filled.SportsVolleyball
+        "Swimming" -> Icons.Filled.Pool
+        "Cycling" -> Icons.AutoMirrored.Filled.DirectionsBike
+        "Cricket" -> Icons.Filled.SportsCricket
+        "Baseball" -> Icons.Filled.SportsBaseball
+        "Badminton" -> vectorResource(Res.drawable.ic_badminton)
+        "Gym" -> Icons.Filled.FitnessCenter
+        "Golf" -> Icons.Filled.SportsGolf
+        else -> Icons.Filled.SportsSoccer
+    }
+}
+
 
 
 sealed class Text2StyleToken() {

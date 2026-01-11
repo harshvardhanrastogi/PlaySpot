@@ -44,40 +44,46 @@ fun NavigationRoutes(hasUserSession: Boolean, onBackPressed: () -> Unit) {
             SignupScreenRoute(
                 onBackPressed = { navController.popBackStack() },
                 onLoginClicked = { navController.navigate("Route.Login") },
-                onSignUpSuccess = { navController.navigate("Route.SportPreference") })
+                onSignUpSuccess = {
+                    navController.navigate("Route.SportPreference")
+                }
+            )
         }
 
         composable("Route.Login") {
             LoginScreenRoute(
                 onBackPressed = onBackPressed,
                 onSignUpClicked = { navController.navigate("Route.SignUp") },
-                onLoginSuccess = { navController.navigate("Route.SportPreference") }
+                onLoginSuccess = { navController.navigate("Route.Profile") }
             )
         }
 
-        composable("Route.SportPreference") {
+        composable(route = "Route.SportPreference") {
             PreferenceSetupRoute(
                 onBackPressed = { navController.popBackStack() },
-                onContinueClicked = { navController.navigate("Route.SportPreferenceComplete") }
+                onContinueClicked = { 
+                    navController.navigate("Route.SportPreferenceComplete") 
+                }
             )
         }
 
-        composable("Route.SportPreferenceComplete") {
+        composable(route = "Route.SportPreferenceComplete") {
             PreferenceSetupCompleteRoute(
                 onBackPressed = { navController.popBackStack() },
-                onDiscoverClicked = {},
-                onCompleteProfileClicked = { navController.navigate("Route.FinishProfile") }
+                onDiscoverClicked = { navController.navigate("Route.Profile") },
+                onCompleteProfileClicked = { 
+                    navController.navigate("Route.FinishProfile") 
+                }
             )
         }
 
-        composable("Route.FinishProfile") {
+        composable(route = "Route.FinishProfile") {
             PersonalDetailsScreenRoute(
                 onBackPressed = { navController.popBackStack() },
                 onSaveClicked = { navController.navigate("Route.AddProfilePicture") },
                 onSkipClicked = { navController.navigate("Route.AddProfilePicture") }
             )
         }
-
 
         composable("Route.AddProfilePicture") {
             AddProfilePictureScreenRoute(
@@ -87,10 +93,14 @@ fun NavigationRoutes(hasUserSession: Boolean, onBackPressed: () -> Unit) {
             )
         }
 
-
         composable("Route.Profile") {
             ProfileScreenRoute(
-                onBackPressed = { navController.popBackStack() }
+                onBackPressed = { navController.popBackStack() },
+                onLogoutSuccess = {
+                    navController.navigate("Route.Login") {
+                        popUpTo("Route.Login") { inclusive = true }
+                    }
+                }
             )
         }
     }

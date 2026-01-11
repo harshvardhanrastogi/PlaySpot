@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -23,11 +24,16 @@ import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
@@ -40,6 +46,7 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.harsh.playspot.ui.core.AppTheme
 import com.harsh.playspot.ui.core.BodyLarge
 import com.harsh.playspot.ui.core.BodyMedium
@@ -57,6 +64,7 @@ import com.harsh.playspot.ui.core.TransparentToolbar
 import com.harsh.playspot.ui.core.clickWithFeedback
 import com.harsh.playspot.ui.core.extendedColors
 import com.harsh.playspot.ui.core.semiCircleCornerShape
+import kotlinx.coroutines.flow.collectLatest
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringArrayResource
 import org.jetbrains.compose.resources.stringResource
@@ -82,25 +90,60 @@ import playspot.composeapp.generated.resources.pref_set_up_finish_profile_skill_
 fun PersonalDetailsScreenRoute(
     onSaveClicked: () -> Unit,
     onBackPressed: () -> Unit,
-    onSkipClicked: () -> Unit
+    onSkipClicked: () -> Unit,
+    viewModel: PersonalDetailsViewModel = viewModel { PersonalDetailsViewModel() }
 ) {
+    val uiState by viewModel.uiState.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val bioTextFieldState = rememberTextFieldState(initialText = uiState.bio)
+
+    // Sync bio text field with ViewModel
+    LaunchedEffect(bioTextFieldState) {
+        snapshotFlow { bioTextFieldState.text.toString() }
+            .collectLatest { text ->
+                viewModel.onBioChange(text)
+            }
+    }
+
+    LaunchedEffect(Unit) {
+        viewModel.events.collectLatest { event ->
+            when (event) {
+                is PersonalDetailsEvent.SaveSuccess -> onSaveClicked()
+                is PersonalDetailsEvent.SaveError -> snackbarHostState.showSnackbar(event.message)
+            }
+        }
+    }
+
     PersonalDetailsScreen(
-        onSaveClicked = onSaveClicked,
+        uiState = uiState,
+        snackbarHostState = snackbarHostState,
+        bioTextFieldState = bioTextFieldState,
         onBackPressed = onBackPressed,
-        onSkipClicked = onSkipClicked
+        onSkipClicked = onSkipClicked,
+        onSkillLevelChange = viewModel::onSkillLevelChange,
+        onPlayTimeToggle = viewModel::togglePlayTime,
+        onSaveClicked = viewModel::saveProfile
     )
 }
 
 
 @Composable
 fun PersonalDetailsScreen(
-    onSaveClicked: () -> Unit,
-    onBackPressed: () -> Unit,
-    onSkipClicked: () -> Unit
+    uiState: PersonalDetailsUiState = PersonalDetailsUiState(),
+    snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
+    bioTextFieldState: TextFieldState = rememberTextFieldState(),
+    onBackPressed: () -> Unit = {},
+    onSkipClicked: () -> Unit = {},
+    onSkillLevelChange: (String) -> Unit = {},
+    onPlayTimeToggle: (String) -> Unit = {},
+    onSaveClicked: () -> Unit = {}
 ) {
     val scrollState = rememberScrollState()
     AppTheme {
-        Scaffold(topBar = { TransparentToolbar(onBackPressed = onBackPressed) }) { paddingValues ->
+        Scaffold(
+            topBar = { TransparentToolbar(onBackPressed = onBackPressed) },
+            snackbarHost = { SnackbarHost(snackbarHostState) }
+        ) { paddingValues ->
             Column(
                 modifier = Modifier.fillMaxSize().padding(paddingValues)
                     .padding(horizontal = Padding.padding16Dp)
@@ -118,15 +161,22 @@ fun PersonalDetailsScreen(
                     text = stringResource(Res.string.pref_set_up_finish_profile_desc),
                     color = TextMediumDark
                 )
-                UserBioTextField()
+                UserBioTextField(bioTextFieldState)
 
-                UserSkillLevelSelection()
+                UserSkillLevelSelection(
+                    selectedSkillLevel = uiState.skillLevel,
+                    onSkillLevelChange = onSkillLevelChange
+                )
 
-                UserPlayTimeSelection()
+                UserPlayTimeSelection(
+                    selectedPlayTimes = uiState.selectedPlayTimes,
+                    onPlayTimeToggle = onPlayTimeToggle
+                )
 
                 LargeButton(
                     modifier = Modifier.fillMaxWidth().padding(top = 72.dp),
                     label = stringResource(Res.string.pref_set_up_finish_profile_save),
+                    isLoading = uiState.isLoading,
                     onClick = onSaveClicked
                 )
                 LabelLarge(
@@ -146,9 +196,13 @@ fun PersonalDetailsScreen(
 }
 
 @Composable
-fun UserSkillLevelSelection() {
+fun UserSkillLevelSelection(
+    selectedSkillLevel: String,
+    onSkillLevelChange: (String) -> Unit
+) {
     val hapticFeedback = LocalHapticFeedback.current
-    val skillLevels = remember { mutableStateOf(getSkillLevelStates()) }
+    val skillLevels = getSkillLevelStates()
+    
     BodyLarge(
         modifier = Modifier.padding(
             start = Padding.padding4Dp, top = Padding.padding24Dp
@@ -162,11 +216,11 @@ fun UserSkillLevelSelection() {
         modifier = Modifier.padding(top = Padding.padding24Dp),
         verticalArrangement = Arrangement.spacedBy(Padding.padding12Dp)
     ) {
-        skillLevels.value.forEach { levelState ->
+        skillLevels.forEach { levelState ->
+            val isSelected = levelState.skillLevel.name == selectedSkillLevel
             val onClick = {
-                skillLevels.value = skillLevels.value.map { item ->
-                    item.copy(isSelected = levelState == item)
-                }
+                hapticFeedback.performHapticFeedback(HapticFeedbackType.SegmentTick)
+                onSkillLevelChange(levelState.skillLevel.name)
             }
             ProfileAction(
                 icon = levelState.skillLevel.iconRes,
@@ -175,26 +229,21 @@ fun UserSkillLevelSelection() {
                 text = stringResource(levelState.title),
                 desc = stringResource(levelState.desc),
                 trailing = {
-                    RadioButton(selected = levelState.isSelected, onClick = {
-                        hapticFeedback.performHapticFeedback(HapticFeedbackType.SegmentTick)
-                        onClick()
-                    })
+                    RadioButton(selected = isSelected, onClick = onClick)
                 },
                 onActionClick = onClick
             )
         }
     }
-
 }
 
 
 @Composable
-fun UserBioTextField() {
+fun UserBioTextField(bioTextFieldState: TextFieldState) {
     val hapticFeedback = LocalHapticFeedback.current
-    // Define the limit
     val charLimit = 200
-    val textState = rememberTextFieldState(initialText = "")
     val shape = RoundedCornerShape(size = 22.dp)
+    
     BodyMedium(
         modifier = Modifier.padding(
             start = Padding.padding4Dp, top = Padding.padding24Dp
@@ -221,12 +270,12 @@ fun UserBioTextField() {
             .fillMaxWidth()
             .height(180.dp)
             .background(
-                color = MaterialTheme.extendedColors.widgetBg, // bg-slate-100
+                color = MaterialTheme.extendedColors.widgetBg,
                 shape = shape
             )
     ) {
         BasicTextField(
-            state = textState,
+            state = bioTextFieldState,
             modifier = Modifier
                 .fillMaxSize()
                 .padding(Padding.padding16Dp)
@@ -235,12 +284,12 @@ fun UserBioTextField() {
                     if (state.isFocused) {
                         hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                     }
-                }, // Extra padding for the counter
+                },
             textStyle = Text2StyleToken.BodyMedium.toTextStyle()
-                .copy(color = MaterialTheme.extendedColors.textDark), // Changed to darker color for input readability
+                .copy(color = MaterialTheme.extendedColors.textDark),
             decorator = { innerTextField ->
                 Box {
-                    if (textState.text.isEmpty()) {
+                    if (bioTextFieldState.text.isEmpty()) {
                         BodyMedium(
                             text = "I usually play as a striker, looking for casual games on weekends...",
                             color = TextLighterGray
@@ -251,10 +300,8 @@ fun UserBioTextField() {
             }
         )
 
-
-        // Character Counter at bottomEnd
         Text(
-            text = "${textState.text.length} / $charLimit",
+            text = "${bioTextFieldState.text.length} / $charLimit",
             style = Text2StyleToken.LabelSmall.toTextStyle(),
             color = TextLighterGray.copy(alpha = 0.7f),
             modifier = Modifier
@@ -265,10 +312,13 @@ fun UserBioTextField() {
 }
 
 @Composable
-fun UserPlayTimeSelection() {
-    val chips = getPlayTimeChipsData()
-    val selectedChips = remember { mutableStateOf(chips) }
+fun UserPlayTimeSelection(
+    selectedPlayTimes: Set<String>,
+    onPlayTimeToggle: (String) -> Unit
+) {
+    val playTimeOptions = stringArrayResource(Res.array.pref_set_up_finish_profile_play_time)
     val hapticFeedback = LocalHapticFeedback.current
+    
     BodyLarge(
         modifier = Modifier.padding(
             start = Padding.padding4Dp, top = Padding.padding24Dp
@@ -280,29 +330,24 @@ fun UserPlayTimeSelection() {
 
     FlowRow(
         modifier = Modifier.padding(top = Padding.padding24Dp).fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(
-            Padding.padding16Dp
-        ),
+        horizontalArrangement = Arrangement.spacedBy(Padding.padding16Dp),
         verticalArrangement = Arrangement.spacedBy(Padding.padding12Dp)
     ) {
-        selectedChips.value.forEach { state ->
+        playTimeOptions.forEach { playTime ->
+            val isSelected = selectedPlayTimes.contains(playTime)
             FilterChip(
-                selected = state.isSelected, onClick = {
+                selected = isSelected,
+                onClick = {
                     hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                    selectedChips.value = selectedChips.value.map { item ->
-                        if (item.text == state.text) {
-                            item.copy(isSelected = !item.isSelected)
-                        } else {
-                            item
-                        }
-                    }
-                }, label = {
+                    onPlayTimeToggle(playTime)
+                },
+                label = {
                     TitleMedium(
                         modifier = Modifier.padding(
                             horizontal = Padding.padding8Dp,
                             vertical = Padding.padding16Dp
                         ),
-                        text = state.text,
+                        text = playTime,
                         color = Color.Unspecified,
                         fontWeight = FontWeight.W500,
                     )
@@ -323,11 +368,11 @@ fun UserPlayTimeSelection() {
 @Preview
 @Composable
 fun PersonalDetailsScreenPreview() {
-    PersonalDetailsScreen({}, {}, {})
+    PersonalDetailsScreen()
 }
 
 
-sealed class SkillLevel() {
+sealed class SkillLevel(val name: String) {
     abstract val iconRes: ImageVector
 
     @Composable
@@ -336,7 +381,7 @@ sealed class SkillLevel() {
     @Composable
     abstract fun iconBgColor(): Color
 
-    object Casual : SkillLevel() {
+    object Casual : SkillLevel("Casual") {
         override val iconRes: ImageVector
             get() = Icons.Filled.EmojiEvents
 
@@ -351,7 +396,7 @@ sealed class SkillLevel() {
         }
     }
 
-    object Competitive : SkillLevel() {
+    object Competitive : SkillLevel("Competitive") {
         override val iconRes: ImageVector
             get() = Icons.Filled.SportsScore
 
@@ -366,7 +411,7 @@ sealed class SkillLevel() {
         }
     }
 
-    object Pro : SkillLevel() {
+    object Pro : SkillLevel("Pro") {
         override val iconRes: ImageVector
             get() = Icons.Filled.WorkspacePremium
 
@@ -385,8 +430,7 @@ sealed class SkillLevel() {
 data class SkillLevelState(
     val skillLevel: SkillLevel,
     val title: StringResource,
-    val desc: StringResource,
-    val isSelected: Boolean
+    val desc: StringResource
 )
 
 fun getSkillLevelStates(): List<SkillLevelState> {
@@ -394,30 +438,17 @@ fun getSkillLevelStates(): List<SkillLevelState> {
         SkillLevelState(
             skillLevel = SkillLevel.Casual,
             title = Res.string.pref_set_up_finish_profile_skill_level_casual,
-            desc = Res.string.pref_set_up_finish_profile_skill_level_casual_desc,
-            isSelected = true
+            desc = Res.string.pref_set_up_finish_profile_skill_level_casual_desc
         ),
         SkillLevelState(
             skillLevel = SkillLevel.Competitive,
             title = Res.string.pref_set_up_finish_profile_skill_level_competitive,
-            desc = Res.string.pref_set_up_finish_profile_skill_level_competitive_desc,
-            isSelected = false
+            desc = Res.string.pref_set_up_finish_profile_skill_level_competitive_desc
         ),
         SkillLevelState(
             skillLevel = SkillLevel.Pro,
             title = Res.string.pref_set_up_finish_profile_skill_level_pro,
-            desc = Res.string.pref_set_up_finish_profile_skill_level_pro_desc,
-            isSelected = false
+            desc = Res.string.pref_set_up_finish_profile_skill_level_pro_desc
         ),
     )
-}
-
-data class ChipState(val isSelected: Boolean, val text: String)
-
-@Composable
-fun getPlayTimeChipsData(): List<ChipState> {
-    val array = stringArrayResource(Res.array.pref_set_up_finish_profile_play_time)
-    return remember(array) {
-        array.map { ChipState(isSelected = false, text = it) }
-    }
 }

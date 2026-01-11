@@ -2,7 +2,10 @@ package com.harsh.playspot.ui.signup
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.harsh.playspot.dao.Profile
 import com.harsh.playspot.data.auth.AuthRepository
+import com.harsh.playspot.data.firestore.CollectionNames
+import com.harsh.playspot.data.firestore.FirestoreRepository
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -11,6 +14,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlin.random.Random
 
 data class SignUpUiState(
     val fullName: String = "",
@@ -32,7 +36,8 @@ sealed class SignUpEvent {
 }
 
 class SignUpViewModel(
-    private val authRepository: AuthRepository = AuthRepository.getInstance()
+    private val authRepository: AuthRepository = AuthRepository.getInstance(),
+    private val firestoreRepository: FirestoreRepository = FirestoreRepository.instance
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SignUpUiState())
@@ -132,19 +137,46 @@ class SignUpViewModel(
         // Perform sign up
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
-            
+
             authRepository.signUpWithEmail(currentState.email, currentState.password)
                 .onSuccess { user ->
-                    // Update display name after successful signup
-                    // Note: Display name update might need additional implementation
-                    _uiState.update { it.copy(isLoading = false) }
-                    _events.emit(SignUpEvent.SignUpSuccess)
+                    // Create profile in Firestore using Firebase Auth UID as document ID
+                    val profile = Profile(
+                        fullName = currentState.fullName,
+                        userName = generateRandomUsername(currentState.fullName),
+                        email = currentState.email
+                    )
+
+                    firestoreRepository.setDocument(
+                        collection = CollectionNames.USER_PROFILE,
+                        documentId = user.uid,  // Use Firebase Auth UID as primary key
+                        data = profile
+                    ).onSuccess {
+                        _uiState.update { it.copy(isLoading = false) }
+                        _events.emit(SignUpEvent.SignUpSuccess)
+                    }.onFailure { exception ->
+                        _uiState.update { it.copy(isLoading = false) }
+                        _events.emit(
+                            SignUpEvent.SignUpError(
+                                exception.message ?: "Failed to create profile"
+                            )
+                        )
+                    }
                 }
                 .onFailure { exception ->
                     _uiState.update { it.copy(isLoading = false) }
                     _events.emit(SignUpEvent.SignUpError(exception.message ?: "Sign up failed"))
                 }
         }
+    }
+
+    private fun generateRandomUsername(fullName: String): String {
+        val baseName = fullName.lowercase()
+            .split(" ")
+            .first()
+            .filter { it.isLetterOrDigit() || it == '_' }
+        val randomSuffix = Random.nextInt(1000, 9999)
+        return "${baseName}_$randomSuffix"
     }
 
     private fun isValidEmail(email: String): Boolean {

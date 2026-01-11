@@ -7,6 +7,7 @@ plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
+    alias(libs.plugins.kotlinSerialization)
     alias(libs.plugins.googleServices)
     alias(libs.plugins.buildkonfig)
 }
@@ -14,7 +15,7 @@ plugins {
 kotlin {
     androidTarget {
         compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_11)
+            jvmTarget.set(JvmTarget.JVM_17)
         }
     }
 
@@ -50,6 +51,11 @@ kotlin {
             implementation(libs.kmpauth.firebase)
             implementation(libs.kmpauth.uihelper)
             implementation(libs.kotlinx.coroutines.core)
+            // GitLive Firebase Firestore
+            implementation(libs.firebase.firestore)
+            // Peekaboo Image Picker & Camera
+            implementation(libs.peekaboo.image.picker)
+            implementation(libs.peekaboo.ui)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -79,8 +85,8 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 }
 
@@ -88,3 +94,17 @@ dependencies {
     debugImplementation(compose.uiTooling)
 }
 
+buildkonfig {
+    packageName = "com.harsh.playspot"
+    objectName = "BuildConfig"
+
+    defaultConfigs {
+        buildConfigField(STRING, "APP_NAME", "PlaySpot")
+        buildConfigField(STRING, "VERSION_NAME", "1.0.0")
+        buildConfigField(BOOLEAN, "DEBUG", "true")
+    }
+
+    defaultConfigs("release") {
+        buildConfigField(BOOLEAN, "DEBUG", "false")
+    }
+}

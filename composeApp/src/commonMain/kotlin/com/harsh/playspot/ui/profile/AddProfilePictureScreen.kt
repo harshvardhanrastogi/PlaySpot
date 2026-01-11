@@ -27,6 +27,12 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -37,6 +43,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.harsh.playspot.ui.core.AppTheme
 import com.harsh.playspot.ui.core.BodyLarge
 import com.harsh.playspot.ui.core.HeadlineLarge
@@ -46,6 +53,11 @@ import com.harsh.playspot.ui.core.Padding
 import com.harsh.playspot.ui.core.ProfileAction
 import com.harsh.playspot.ui.core.clickWithFeedback
 import com.harsh.playspot.ui.core.extendedColors
+import com.preat.peekaboo.image.picker.SelectionMode
+import com.preat.peekaboo.image.picker.rememberImagePickerLauncher
+import com.preat.peekaboo.image.picker.toImageBitmap
+import com.preat.peekaboo.ui.camera.PeekabooCamera
+import com.preat.peekaboo.ui.camera.rememberPeekabooCameraState
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
@@ -62,13 +74,69 @@ import playspot.composeapp.generated.resources.profile_picture_title
 fun AddProfilePictureScreenRoute(
     onBackPressed: () -> Unit,
     onSkipClicked: () -> Unit,
-    onSaveClicked: () -> Unit
+    onSaveClicked: () -> Unit,
+    viewModel: AddProfilePictureViewModel = viewModel { AddProfilePictureViewModel() }
 ) {
-    AddProfilePictureScreen(
-        onBackPressed = onBackPressed,
-        onSkipClicked = onSkipClicked,
-        onSaveClicked = onSaveClicked
+    val uiState by viewModel.uiState.collectAsState()
+    val scope = rememberCoroutineScope()
+    var showCamera by remember { mutableStateOf(false) }
+
+    // Gallery picker
+    val galleryLauncher = rememberImagePickerLauncher(
+        selectionMode = SelectionMode.Single,
+        scope = scope,
+        onResult = { byteArrays ->
+            byteArrays.firstOrNull()?.let { bytes ->
+                viewModel.onImageSelected(bytes)
+            }
+        }
     )
+
+    // Camera state
+    val cameraState = rememberPeekabooCameraState(
+        onCapture = { bytes ->
+            bytes?.let {
+                viewModel.onImageSelected(it)
+            }
+            showCamera = false
+        }
+    )
+
+    if (showCamera) {
+        // Full-screen camera
+        PeekabooCamera(
+            state = cameraState,
+            modifier = Modifier.fillMaxSize(),
+            permissionDeniedContent = {
+                // Permission denied UI
+                Box(
+                    modifier = Modifier.fillMaxSize().background(Color.Black),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        LabelLarge(
+                            text = "Camera permission required",
+                            color = Color.White
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        LargeButton(
+                            label = "Go Back",
+                            onClick = { showCamera = false }
+                        )
+                    }
+                }
+            }
+        )
+    } else {
+        AddProfilePictureScreen(
+            onBackPressed = onBackPressed,
+            onSkipClicked = onSkipClicked,
+            onGalleryClicked = { galleryLauncher.launch() },
+            onCameraClicked = { showCamera = true },
+            onSaveClicked = onSaveClicked,
+            selectedImageBytes = uiState.selectedImageBytes
+        )
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -78,7 +146,8 @@ fun AddProfilePictureScreen(
     onSkipClicked: () -> Unit = {},
     onGalleryClicked: () -> Unit = {},
     onCameraClicked: () -> Unit = {},
-    onSaveClicked: () -> Unit = {}
+    onSaveClicked: () -> Unit = {},
+    selectedImageBytes: ByteArray? = null
 ) {
     AppTheme {
         Scaffold(
@@ -126,6 +195,7 @@ fun AddProfilePictureScreen(
                 // Profile Image Placeholder with Camera Badge
                 ProfileImagePlaceholder(
                     modifier = Modifier,
+                    selectedImageBytes = selectedImageBytes,
                     onClick = onGalleryClicked
                 )
 
@@ -201,6 +271,7 @@ fun AddProfilePictureScreen(
                         .fillMaxWidth()
                         .padding(bottom = Padding.padding24Dp),
                     label = stringResource(Res.string.profile_picture_save_continue),
+                    enabled = selectedImageBytes != null,
                     onClick = onSaveClicked
                 )
             }
@@ -211,6 +282,7 @@ fun AddProfilePictureScreen(
 @Composable
 private fun ProfileImagePlaceholder(
     modifier: Modifier = Modifier,
+    selectedImageBytes: ByteArray? = null,
     onClick: () -> Unit = {}
 ) {
     Box(
@@ -230,12 +302,21 @@ private fun ProfileImagePlaceholder(
                     shape = CircleShape
                 )
         ) {
-            Image(
-                painter = painterResource(Res.drawable.cropped_circle_image),
-                contentDescription = "Profile placeholder",
-                modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop
-            )
+            if (selectedImageBytes != null) {
+                Image(
+                    bitmap = selectedImageBytes.toImageBitmap(),
+                    contentDescription = "Selected profile picture",
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
+            } else {
+                Image(
+                    painter = painterResource(Res.drawable.cropped_circle_image),
+                    contentDescription = "Profile placeholder",
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
+            }
         }
 
         // Camera badge
