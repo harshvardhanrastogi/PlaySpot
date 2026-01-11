@@ -45,10 +45,14 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
@@ -101,10 +105,25 @@ import playspot.composeapp.generated.resources.profile_title
 fun ProfileScreenRoute(
     onBackPressed: () -> Unit,
     onLogoutSuccess: () -> Unit = {},
+    onAddSportClicked: () -> Unit = {},
     viewModel: ProfileViewModel = viewModel { ProfileViewModel() }
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    // Refresh profile when screen resumes (e.g., returning from EditSports)
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                viewModel.refreshProfile()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
 
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
@@ -118,6 +137,7 @@ fun ProfileScreenRoute(
     ProfileScreen(
         onBackPressed = onBackPressed,
         onLogoutClicked = { viewModel.logout() },
+        onAddSportClicked = onAddSportClicked,
         isLoggingOut = uiState.isLoggingOut,
         snackbarHostState = snackbarHostState,
         name = uiState.name,
@@ -141,6 +161,7 @@ fun ProfileScreen(
     onPrivacyClicked: () -> Unit = {},
     onHelpClicked: () -> Unit = {},
     onLogoutClicked: () -> Unit = {},
+    onAddSportClicked: () -> Unit = {},
     isLoggingOut: Boolean = false,
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
     name: String = "Alex Johnson",
@@ -236,7 +257,10 @@ fun ProfileScreen(
                 }
 
                 // My Sports Section
-                MySportsSection(preferredSports = preferredSports)
+                MySportsSection(
+                    preferredSports = preferredSports,
+                    onAddSportClicked = onAddSportClicked
+                )
 
                 Spacer(modifier = Modifier.height(24.dp))
 
@@ -475,7 +499,10 @@ private fun StatCard(
 }
 
 @Composable
-private fun MySportsSection(preferredSports: List<String>) {
+private fun MySportsSection(
+    preferredSports: List<String>,
+    onAddSportClicked: () -> Unit
+) {
     Column(modifier = Modifier.padding(horizontal = Padding.padding16Dp)) {
         // Section Header
         TitleMedium(
@@ -505,7 +532,10 @@ private fun MySportsSection(preferredSports: List<String>) {
                     }
                     // If odd number of items, add the AddSportChip or spacer
                     if (rowItems.size == 1) {
-                        AddSportChip(modifier = Modifier.weight(1f))
+                        AddSportChip(
+                            modifier = Modifier.weight(1f),
+                            onClick = onAddSportClicked
+                        )
                     }
                 }
             }
@@ -515,7 +545,10 @@ private fun MySportsSection(preferredSports: List<String>) {
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    AddSportChip(modifier = Modifier.weight(1f))
+                    AddSportChip(
+                        modifier = Modifier.weight(1f),
+                        onClick = onAddSportClicked
+                    )
                     Spacer(modifier = Modifier.weight(1f))
                 }
             }

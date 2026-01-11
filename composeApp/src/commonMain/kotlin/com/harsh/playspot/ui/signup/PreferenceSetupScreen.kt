@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
@@ -33,6 +34,7 @@ import androidx.compose.material.icons.filled.SportsGolf
 import androidx.compose.material.icons.filled.SportsSoccer
 import androidx.compose.material.icons.filled.SportsTennis
 import androidx.compose.material.icons.filled.SportsVolleyball
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -144,13 +146,26 @@ fun PreferenceSetupScreen(
                     text = stringResource(Res.string.pref_choose_sport_desc),
                     color = MaterialTheme.extendedColors.textDark
                 )
-                SportPreferenceSelector(
-                    sports = sports,
-                    selectedSports = uiState.selectedSports,
-                    onSportToggle = onSportToggle,
-                    onSelectAll = onSelectAll,
-                    onClearAll = onClearAll
-                )
+                
+                if (uiState.isLoadingExisting) {
+                    // Show loading while fetching existing sports
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(200.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator()
+                    }
+                } else {
+                    SportPreferenceSelector(
+                        sports = sports,
+                        selectedSports = uiState.selectedSports,
+                        onSportToggle = onSportToggle,
+                        onSelectAll = onSelectAll,
+                        onClearAll = onClearAll
+                    )
+                }
                 Spacer(modifier = Modifier.weight(1f))
                 LargeButton(
                     modifier = Modifier.fillMaxWidth().padding(bottom = Padding.padding16Dp),

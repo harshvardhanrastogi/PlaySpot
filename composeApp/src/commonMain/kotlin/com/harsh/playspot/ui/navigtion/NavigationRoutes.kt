@@ -100,7 +100,17 @@ fun NavigationRoutes(hasUserSession: Boolean, onBackPressed: () -> Unit) {
                     navController.navigate("Route.Login") {
                         popUpTo("Route.Login") { inclusive = true }
                     }
+                },
+                onAddSportClicked = {
+                    navController.navigate("Route.EditSports")
                 }
+            )
+        }
+
+        composable("Route.EditSports") {
+            PreferenceSetupRoute(
+                onBackPressed = { navController.popBackStack() },
+                onContinueClicked = { navController.popBackStack() }
             )
         }
     }

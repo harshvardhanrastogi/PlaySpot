@@ -47,6 +47,10 @@ class ProfileViewModel(
         loadProfile()
     }
 
+    fun refreshProfile() {
+        loadProfile()
+    }
+
     private fun loadProfile() {
         val uid = authRepository.currentUser?.uid ?: return
 

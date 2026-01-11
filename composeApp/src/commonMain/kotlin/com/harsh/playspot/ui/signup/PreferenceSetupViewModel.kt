@@ -2,6 +2,7 @@ package com.harsh.playspot.ui.signup
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.harsh.playspot.dao.Profile
 import com.harsh.playspot.data.auth.AuthRepository
 import com.harsh.playspot.data.firestore.CollectionNames
 import com.harsh.playspot.data.firestore.FirestoreRepository
@@ -16,7 +17,8 @@ import kotlinx.coroutines.launch
 
 data class PreferenceSetupUiState(
     val selectedSports: Set<String> = emptySet(),
-    val isLoading: Boolean = false
+    val isLoading: Boolean = false,
+    val isLoadingExisting: Boolean = true
 )
 
 sealed class PreferenceSetupEvent {
@@ -34,6 +36,33 @@ class PreferenceSetupViewModel(
 
     private val _events = MutableSharedFlow<PreferenceSetupEvent>()
     val events: SharedFlow<PreferenceSetupEvent> = _events.asSharedFlow()
+
+    init {
+        loadExistingSports()
+    }
+
+    private fun loadExistingSports() {
+        val uid = authRepository.currentUser?.uid ?: run {
+            _uiState.update { it.copy(isLoadingExisting = false) }
+            return
+        }
+
+        viewModelScope.launch {
+            firestoreRepository.getDocument<Profile>(
+                collection = CollectionNames.USER_PROFILE,
+                documentId = uid
+            ).onSuccess { profile ->
+                _uiState.update {
+                    it.copy(
+                        selectedSports = profile?.preferredSports?.toSet() ?: emptySet(),
+                        isLoadingExisting = false
+                    )
+                }
+            }.onFailure {
+                _uiState.update { it.copy(isLoadingExisting = false) }
+            }
+        }
+    }
 
     fun toggleSport(sport: String) {
         _uiState.update { state ->
