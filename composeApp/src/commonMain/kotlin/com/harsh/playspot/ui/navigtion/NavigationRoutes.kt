@@ -6,10 +6,10 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.harsh.playspot.ui.home.HomeScreenRoute
 import com.harsh.playspot.ui.login.LoginScreenRoute
 import com.harsh.playspot.ui.profile.AddProfilePictureScreenRoute
 import com.harsh.playspot.ui.profile.PersonalDetailsScreenRoute
-import com.harsh.playspot.ui.profile.ProfileScreenRoute
 import com.harsh.playspot.ui.signup.PreferenceSetupCompleteRoute
 import com.harsh.playspot.ui.signup.PreferenceSetupRoute
 import com.harsh.playspot.ui.signup.SignupScreenRoute
@@ -18,7 +18,7 @@ import kotlinx.serialization.Serializable
 @Composable
 fun NavigationRoutes(hasUserSession: Boolean, onBackPressed: () -> Unit) {
     val navController = rememberNavController()
-    val startScreen = if (hasUserSession) "Route.Profile" else "Route.Login"
+    val startScreen = if (hasUserSession) "Route.Home" else "Route.Login"
     NavHost(navController = navController, startDestination = startScreen, enterTransition = {
         slideIntoContainer(
             towards = AnimatedContentTransitionScope.SlideDirection.Left,
@@ -54,7 +54,7 @@ fun NavigationRoutes(hasUserSession: Boolean, onBackPressed: () -> Unit) {
             LoginScreenRoute(
                 onBackPressed = onBackPressed,
                 onSignUpClicked = { navController.navigate("Route.SignUp") },
-                onLoginSuccess = { navController.navigate("Route.Profile") }
+                onLoginSuccess = { navController.navigate("Route.Home") }
             )
         }
 
@@ -70,7 +70,7 @@ fun NavigationRoutes(hasUserSession: Boolean, onBackPressed: () -> Unit) {
         composable(route = "Route.SportPreferenceComplete") {
             PreferenceSetupCompleteRoute(
                 onBackPressed = { navController.popBackStack() },
-                onDiscoverClicked = { navController.navigate("Route.Profile") },
+                onDiscoverClicked = { navController.navigate("Route.Home") },
                 onCompleteProfileClicked = { 
                     navController.navigate("Route.FinishProfile") 
                 }
@@ -88,14 +88,13 @@ fun NavigationRoutes(hasUserSession: Boolean, onBackPressed: () -> Unit) {
         composable("Route.AddProfilePicture") {
             AddProfilePictureScreenRoute(
                 onBackPressed = { navController.popBackStack() },
-                onSkipClicked = { navController.navigate("Route.Profile") },
-                onSaveClicked = { navController.navigate("Route.Profile") }
+                onSkipClicked = { navController.navigate("Route.Home") },
+                onSaveClicked = { navController.navigate("Route.Home") }
             )
         }
 
-        composable("Route.Profile") {
-            ProfileScreenRoute(
-                onBackPressed = { navController.popBackStack() },
+        composable("Route.Home") {
+            HomeScreenRoute(
                 onLogoutSuccess = {
                     navController.navigate("Route.Login") {
                         popUpTo("Route.Login") { inclusive = true }
