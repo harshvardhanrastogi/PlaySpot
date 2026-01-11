@@ -27,11 +27,8 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Pool
 import androidx.compose.material.icons.filled.Share
-import androidx.compose.material.icons.filled.SportsBasketball
 import androidx.compose.material.icons.filled.SportsScore
-import androidx.compose.material.icons.filled.SportsTennis
 import androidx.compose.material.icons.filled.Verified
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -50,9 +47,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
@@ -65,6 +59,9 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.harsh.playspot.ui.core.AppTheme
 import com.harsh.playspot.ui.core.BodyMedium
@@ -74,11 +71,12 @@ import com.harsh.playspot.ui.core.LabelLarge
 import com.harsh.playspot.ui.core.LabelSmall
 import com.harsh.playspot.ui.core.OutlinedPrimaryButton
 import com.harsh.playspot.ui.core.Padding
+import com.harsh.playspot.ui.core.SportUi
 import com.harsh.playspot.ui.core.TitleLarge
 import com.harsh.playspot.ui.core.TitleMedium
 import com.harsh.playspot.ui.core.clickWithFeedback
 import com.harsh.playspot.ui.core.extendedColors
-import com.harsh.playspot.ui.core.getSportIcon
+import com.harsh.playspot.ui.core.getSportsMap
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
@@ -523,11 +521,12 @@ private fun MySportsSection(
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     rowItems.forEach { sport ->
+                        val sportUi = getSportUi(sport)!!
                         SportChip(
                             modifier = Modifier.weight(1f),
-                            icon = getSportIcon(sport),
-                            iconTint = getSportColor(sport),
-                            label = sport
+                            icon = sportUi.icon,
+                            iconTint = sportUi.color,
+                            label = sportUi.name
                         )
                     }
                     // If odd number of items, add the AddSportChip or spacer
@@ -556,23 +555,11 @@ private fun MySportsSection(
     }
 }
 
-private fun getSportColor(sport: String): Color {
-    return when (sport) {
-        "Football" -> Color(0xFF22C55E)     // Green
-        "Basketball" -> Color(0xFFF97316)   // Orange
-        "Tennis" -> Color(0xFFEAB308)       // Yellow
-        "Running" -> Color(0xFFEC4899)      // Pink
-        "Volleyball" -> Color(0xFF8B5CF6)   // Purple
-        "Swimming" -> Color(0xFF3B82F6)     // Blue
-        "Cycling" -> Color(0xFF14B8A6)      // Teal
-        "Cricket" -> Color(0xFF10B981)      // Emerald
-        "Baseball" -> Color(0xFFEF4444)     // Red
-        "Badminton" -> Color(0xFF06B6D4)    // Cyan
-        "Gym" -> Color(0xFF6366F1)          // Indigo
-        "Golf" -> Color(0xFF84CC16)         // Lime
-        else -> Color(0xFF6B7280)           // Gray
-    }
+@Composable
+private fun getSportUi(sport: String): SportUi? {
+    return getSportsMap()[sport]
 }
+
 
 @Composable
 private fun SportChip(
@@ -937,7 +924,9 @@ fun ProfileScreenPreview() {
 @Preview
 @Composable
 fun ChipPreview() {
+    val sport = getSportsMap()["Yoga"]
+    sport ?: return
     AppTheme {
-        PlayTimeChip(label = "Weeknights")
+        SportChip(icon = sport.icon, iconTint = sport.color, label = sport.name)
     }
 }

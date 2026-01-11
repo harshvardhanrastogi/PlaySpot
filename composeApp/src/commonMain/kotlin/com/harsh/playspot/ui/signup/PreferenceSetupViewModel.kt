@@ -6,6 +6,7 @@ import com.harsh.playspot.dao.Profile
 import com.harsh.playspot.data.auth.AuthRepository
 import com.harsh.playspot.data.firestore.CollectionNames
 import com.harsh.playspot.data.firestore.FirestoreRepository
+import com.harsh.playspot.ui.core.SportUi
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -75,8 +76,8 @@ class PreferenceSetupViewModel(
         }
     }
 
-    fun selectAll(sports: List<String>) {
-        _uiState.update { it.copy(selectedSports = sports.toSet()) }
+    fun selectAll(sports: List<SportUi>) {
+        _uiState.update { it.copy(selectedSports = sports.map { it.name }.toSet()) }
     }
 
     fun clearAll() {
@@ -108,7 +109,11 @@ class PreferenceSetupViewModel(
                 _events.emit(PreferenceSetupEvent.SaveSuccess)
             }.onFailure { exception ->
                 _uiState.update { it.copy(isLoading = false) }
-                _events.emit(PreferenceSetupEvent.SaveError(exception.message ?: "Failed to save preferences"))
+                _events.emit(
+                    PreferenceSetupEvent.SaveError(
+                        exception.message ?: "Failed to save preferences"
+                    )
+                )
             }
         }
     }

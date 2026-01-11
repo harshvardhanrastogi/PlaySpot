@@ -22,18 +22,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.DirectionsBike
-import androidx.compose.material.icons.automirrored.filled.DirectionsRun
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.FitnessCenter
-import androidx.compose.material.icons.filled.Pool
-import androidx.compose.material.icons.filled.SportsBaseball
-import androidx.compose.material.icons.filled.SportsBasketball
-import androidx.compose.material.icons.filled.SportsCricket
-import androidx.compose.material.icons.filled.SportsGolf
-import androidx.compose.material.icons.filled.SportsSoccer
-import androidx.compose.material.icons.filled.SportsTennis
-import androidx.compose.material.icons.filled.SportsVolleyball
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -62,25 +51,22 @@ import com.harsh.playspot.ui.core.HeadlineLarge
 import com.harsh.playspot.ui.core.LabelLarge
 import com.harsh.playspot.ui.core.LargeButton
 import com.harsh.playspot.ui.core.Padding
+import com.harsh.playspot.ui.core.SportUi
 import com.harsh.playspot.ui.core.TextLightGray
 import com.harsh.playspot.ui.core.TitleMedium
 import com.harsh.playspot.ui.core.TransparentToolbar
 import com.harsh.playspot.ui.core.extendedColors
-import com.harsh.playspot.ui.core.getSportIcon
+import com.harsh.playspot.ui.core.getSports
 import com.harsh.playspot.ui.core.semiCircleCornerShape
 import kotlinx.coroutines.flow.collectLatest
-import org.jetbrains.compose.resources.stringArrayResource
 import org.jetbrains.compose.resources.stringResource
-import org.jetbrains.compose.resources.vectorResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import playspot.composeapp.generated.resources.Res
-import playspot.composeapp.generated.resources.ic_badminton
 import playspot.composeapp.generated.resources.pref_choose_sport
 import playspot.composeapp.generated.resources.pref_choose_sport_clear
 import playspot.composeapp.generated.resources.pref_choose_sport_continue
 import playspot.composeapp.generated.resources.pref_choose_sport_desc
 import playspot.composeapp.generated.resources.pref_choose_sport_select_all
-import playspot.composeapp.generated.resources.pref_sports_list
 
 @Composable
 fun PreferenceSetupRoute(
@@ -90,7 +76,7 @@ fun PreferenceSetupRoute(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
-    val sports = stringArrayResource(Res.array.pref_sports_list)
+    val sports = getSports()
 
     LaunchedEffect(Unit) {
         viewModel.events.collectLatest { event ->
@@ -118,7 +104,7 @@ fun PreferenceSetupRoute(
 fun PreferenceSetupScreen(
     uiState: PreferenceSetupUiState = PreferenceSetupUiState(),
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
-    sports: List<String> = emptyList(),
+    sports: List<SportUi> = emptyList(),
     onBackPressed: () -> Unit = {},
     onSportToggle: (String) -> Unit = {},
     onSelectAll: () -> Unit = {},
@@ -182,7 +168,7 @@ fun PreferenceSetupScreen(
 
 @Composable
 private fun SportPreferenceSelector(
-    sports: List<String>,
+    sports: List<SportUi>,
     selectedSports: Set<String>,
     onSportToggle: (String) -> Unit,
     onSelectAll: () -> Unit,
@@ -197,10 +183,10 @@ private fun SportPreferenceSelector(
         ) {
             sports.forEach { sport ->
                 SportPreferenceChip(
-                    text = sport,
-                    vectorImage = getSportIcon(sport),
-                    isSelected = selectedSports.contains(sport),
-                    onClick = { onSportToggle(sport) }
+                    text = sport.name,
+                    vectorImage = sport.icon,
+                    isSelected = selectedSports.contains(sport.name),
+                    onClick = { onSportToggle(sport.name) }
                 )
             }
         }
@@ -241,7 +227,7 @@ private fun SportPreferenceSelector(
 
 @Composable
 private fun SportPreferenceChip(
-    text: String = "Football",
+    text: String,
     vectorImage: ImageVector,
     isSelected: Boolean,
     onClick: () -> Unit
