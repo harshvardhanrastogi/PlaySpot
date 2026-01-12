@@ -17,6 +17,7 @@ import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.EmojiEvents
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.SportsScore
 import androidx.compose.material.icons.filled.WorkspacePremium
 import androidx.compose.material3.FilterChip
@@ -83,6 +84,8 @@ import playspot.composeapp.generated.resources.pref_set_up_finish_profile_skill_
 import playspot.composeapp.generated.resources.pref_set_up_finish_profile_skill_level_casual_desc
 import playspot.composeapp.generated.resources.pref_set_up_finish_profile_skill_level_competitive
 import playspot.composeapp.generated.resources.pref_set_up_finish_profile_skill_level_competitive_desc
+import playspot.composeapp.generated.resources.pref_set_up_finish_profile_skill_level_open
+import playspot.composeapp.generated.resources.pref_set_up_finish_profile_skill_level_open_desc
 import playspot.composeapp.generated.resources.pref_set_up_finish_profile_skill_level_pro
 import playspot.composeapp.generated.resources.pref_set_up_finish_profile_skill_level_pro_desc
 
@@ -134,7 +137,7 @@ fun PersonalDetailsScreen(
     bioTextFieldState: TextFieldState = rememberTextFieldState(),
     onBackPressed: () -> Unit = {},
     onSkipClicked: () -> Unit = {},
-    onSkillLevelChange: (String) -> Unit = {},
+    onSkillLevelChange: (SkillLevel) -> Unit = {},
     onPlayTimeToggle: (String) -> Unit = {},
     onSaveClicked: () -> Unit = {}
 ) {
@@ -197,8 +200,8 @@ fun PersonalDetailsScreen(
 
 @Composable
 fun UserSkillLevelSelection(
-    selectedSkillLevel: String,
-    onSkillLevelChange: (String) -> Unit
+    selectedSkillLevel: SkillLevel,
+    onSkillLevelChange: (SkillLevel) -> Unit
 ) {
     val hapticFeedback = LocalHapticFeedback.current
     val skillLevels = getSkillLevelStates()
@@ -217,10 +220,10 @@ fun UserSkillLevelSelection(
         verticalArrangement = Arrangement.spacedBy(Padding.padding12Dp)
     ) {
         skillLevels.forEach { levelState ->
-            val isSelected = levelState.skillLevel.name == selectedSkillLevel
+            val isSelected = levelState.skillLevel == selectedSkillLevel
             val onClick = {
                 hapticFeedback.performHapticFeedback(HapticFeedbackType.SegmentTick)
-                onSkillLevelChange(levelState.skillLevel.name)
+                onSkillLevelChange(levelState.skillLevel)
             }
             ProfileAction(
                 icon = levelState.skillLevel.iconRes,
@@ -381,7 +384,22 @@ sealed class SkillLevel(val name: String) {
     @Composable
     abstract fun iconBgColor(): Color
 
-    object Casual : SkillLevel("Casual") {
+    object OpenForAll : SkillLevel("Open for all") {
+        override val iconRes: ImageVector
+            get() = Icons.Filled.Favorite
+
+        @Composable
+        override fun iconTint(): Color {
+            return Color(0xFFE50833)
+        }
+
+        @Composable
+        override fun iconBgColor(): Color {
+            return Color(0x45E50833)
+        }
+    }
+
+    object Beginner : SkillLevel("Beginner") {
         override val iconRes: ImageVector
             get() = Icons.Filled.EmojiEvents
 
@@ -396,7 +414,7 @@ sealed class SkillLevel(val name: String) {
         }
     }
 
-    object Competitive : SkillLevel("Competitive") {
+    object Intermediate : SkillLevel("Intermediate") {
         override val iconRes: ImageVector
             get() = Icons.Filled.SportsScore
 
@@ -411,7 +429,7 @@ sealed class SkillLevel(val name: String) {
         }
     }
 
-    object Pro : SkillLevel("Pro") {
+    object Competitive : SkillLevel("Competitive") {
         override val iconRes: ImageVector
             get() = Icons.Filled.WorkspacePremium
 
@@ -436,17 +454,22 @@ data class SkillLevelState(
 fun getSkillLevelStates(): List<SkillLevelState> {
     return listOf(
         SkillLevelState(
-            skillLevel = SkillLevel.Casual,
+            skillLevel = SkillLevel.OpenForAll,
+            title = Res.string.pref_set_up_finish_profile_skill_level_open,
+            desc = Res.string.pref_set_up_finish_profile_skill_level_open_desc
+        ),
+        SkillLevelState(
+            skillLevel = SkillLevel.Beginner,
             title = Res.string.pref_set_up_finish_profile_skill_level_casual,
             desc = Res.string.pref_set_up_finish_profile_skill_level_casual_desc
         ),
         SkillLevelState(
-            skillLevel = SkillLevel.Competitive,
+            skillLevel = SkillLevel.Intermediate,
             title = Res.string.pref_set_up_finish_profile_skill_level_competitive,
             desc = Res.string.pref_set_up_finish_profile_skill_level_competitive_desc
         ),
         SkillLevelState(
-            skillLevel = SkillLevel.Pro,
+            skillLevel = SkillLevel.Competitive,
             title = Res.string.pref_set_up_finish_profile_skill_level_pro,
             desc = Res.string.pref_set_up_finish_profile_skill_level_pro_desc
         ),

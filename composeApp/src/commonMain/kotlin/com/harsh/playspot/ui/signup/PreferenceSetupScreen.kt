@@ -56,7 +56,7 @@ import com.harsh.playspot.ui.core.TextLightGray
 import com.harsh.playspot.ui.core.TitleMedium
 import com.harsh.playspot.ui.core.TransparentToolbar
 import com.harsh.playspot.ui.core.extendedColors
-import com.harsh.playspot.ui.core.getSports
+import com.harsh.playspot.ui.core.getSportsMap
 import com.harsh.playspot.ui.core.semiCircleCornerShape
 import kotlinx.coroutines.flow.collectLatest
 import org.jetbrains.compose.resources.stringResource
@@ -76,7 +76,7 @@ fun PreferenceSetupRoute(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
-    val sports = getSports()
+    val sports = getSportsMap()
 
     LaunchedEffect(Unit) {
         viewModel.events.collectLatest { event ->
@@ -87,13 +87,14 @@ fun PreferenceSetupRoute(
         }
     }
 
+    val allSports = sports.entries.map { it.value }
     PreferenceSetupScreen(
         uiState = uiState,
         snackbarHostState = snackbarHostState,
-        sports = sports,
+        sports = allSports,
         onBackPressed = onBackPressed,
         onSportToggle = viewModel::toggleSport,
-        onSelectAll = { viewModel.selectAll(sports) },
+        onSelectAll = { viewModel.selectAll(allSports) },
         onClearAll = viewModel::clearAll,
         onContinueClicked = viewModel::savePreferences
     )

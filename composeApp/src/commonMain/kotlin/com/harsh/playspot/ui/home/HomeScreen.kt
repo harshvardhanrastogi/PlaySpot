@@ -54,7 +54,8 @@ data class BottomNavItem(
 @Composable
 fun HomeScreenRoute(
     onLogoutSuccess: () -> Unit = {},
-    onAddSportClicked: () -> Unit = {}
+    onAddSportClicked: () -> Unit = {},
+    onCreateEventClicked: () -> Unit = {}
 ) {
     val navItems = listOf(
         BottomNavItem("Events", Icons.Filled.CalendarMonth, Icons.Outlined.CalendarMonth),
@@ -117,7 +118,7 @@ fun HomeScreenRoute(
                     .padding(bottom = paddingValues.calculateBottomPadding())
             ) {
                 when (selectedTabIndex) {
-                    0 -> EventsScreen()
+                    0 -> EventsScreen(onCreateEventClick = onCreateEventClicked)
                     1 -> ExploreScreen()
                     2 -> GroupsScreen()
                     3 -> ProfileScreenRoute(

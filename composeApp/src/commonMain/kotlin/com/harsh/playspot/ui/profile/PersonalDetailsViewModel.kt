@@ -16,7 +16,7 @@ import kotlinx.coroutines.launch
 
 data class PersonalDetailsUiState(
     val bio: String = "",
-    val skillLevel: String = "Casual",
+    val skillLevel: SkillLevel = SkillLevel.Beginner,
     val selectedPlayTimes: Set<String> = emptySet(),
     val isLoading: Boolean = false
 )
@@ -41,7 +41,7 @@ class PersonalDetailsViewModel(
         _uiState.update { it.copy(bio = bio) }
     }
 
-    fun onSkillLevelChange(skillLevel: String) {
+    fun onSkillLevelChange(skillLevel: SkillLevel) {
         _uiState.update { it.copy(skillLevel = skillLevel) }
     }
 
@@ -71,7 +71,7 @@ class PersonalDetailsViewModel(
             val currentState = _uiState.value
             val updates = mapOf(
                 "bio" to currentState.bio,
-                "skillLevel" to currentState.skillLevel,
+                "skillLevel" to currentState.skillLevel.name,
                 "playTime" to currentState.selectedPlayTimes.toList()
             )
 

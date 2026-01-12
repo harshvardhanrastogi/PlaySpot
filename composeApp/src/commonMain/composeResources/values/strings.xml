@@ -59,11 +59,13 @@
     <string name="pref_set_up_finish_profile_bio">Bio</string>
     <string name="pref_set_up_finish_profile_bio_optional">(Optional)</string>
     <string name="pref_set_up_finish_profile_skill_level">Skill Level</string>
-    <string name="pref_set_up_finish_profile_skill_level_casual">Casual</string>
+    <string name="pref_set_up_finish_profile_skill_level_open">Open for all</string>
+    <string name="pref_set_up_finish_profile_skill_level_open_desc">I'm an all rounder</string>
+    <string name="pref_set_up_finish_profile_skill_level_casual">Beginner</string>
     <string name="pref_set_up_finish_profile_skill_level_casual_desc">Just for fun, no pressure</string>
-    <string name="pref_set_up_finish_profile_skill_level_competitive">Competitive</string>
+    <string name="pref_set_up_finish_profile_skill_level_competitive">Intermediate</string>
     <string name="pref_set_up_finish_profile_skill_level_competitive_desc">Played in leagues before</string>
-    <string name="pref_set_up_finish_profile_skill_level_pro">Pro</string>
+    <string name="pref_set_up_finish_profile_skill_level_pro">Competitive</string>
     <string name="pref_set_up_finish_profile_skill_level_pro_desc">High level experience</string>
     <string name="pref_set_up_finish_profile_play_time_title">When do you usually play?</string>
     <string-array name="pref_set_up_finish_profile_play_time">
@@ -93,5 +95,21 @@
     <string name="profile_settings_privacy">Privacy &amp; Security</string>
     <string name="profile_settings_help">Help &amp; Support</string>
     <string name="profile_logout">Log Out</string>
+
+    <!-- Events Screen -->
+    <string name="events_title">My Sports Events</string>
+    <string name="events_tab_attending">Attending</string>
+    <string name="events_tab_organizing">Organizing</string>
+    <string name="events_upcoming_matches">Upcoming Matches</string>
+    <string name="events_see_all">See all</string>
+    <string name="events_suggested_for_you">Suggested For You</string>
+    <string name="events_individual_training">Individual training</string>
+    <string name="events_others">+%1$d others</string>
+    <string name="events_status_confirmed">Confirmed</string>
+    <string name="events_status_pending">Pending</string>
+    <string name="events_status_solo">Solo</string>
+    <string name="events_add_event">Add Event</string>
+    <string name="events_notifications">Notifications</string>
+    <string name="events_add">Add</string>
 
 </resources>

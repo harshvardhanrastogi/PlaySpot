@@ -1050,23 +1050,6 @@ fun LargeButtonPreview() {
 }
 
 data class SportUi(val name: String, val color: Color, val icon: ImageVector)
-@Composable
-fun getSports() =
-    listOf(
-        SportUi("Football", Color(0xFF22C55E), Icons.Filled.SportsSoccer),
-        SportUi("Basketball", Color(0xFFF97316), Icons.Filled.SportsBasketball),
-        SportUi("Tennis", Color(0xFFEAB308), Icons.Filled.SportsTennis),
-        SportUi("Running", Color(0xFFEC4899), Icons.AutoMirrored.Filled.DirectionsRun),
-        SportUi("Volleyball", Color(0xFF8B5CF6), Icons.Filled.SportsVolleyball),
-        SportUi("Swimming", Color(0xFF3B82F6), Icons.Filled.Pool),
-        SportUi("Cycling", Color(0xFF14B8A6), Icons.AutoMirrored.Filled.DirectionsBike),
-        SportUi("Cricket", Color(0xFF10B981), Icons.Filled.SportsCricket),
-        SportUi("Baseball", Color(0xFFEF4444), Icons.Filled.SportsBaseball),
-        SportUi("Badminton", Color(0xFF06B6D4), vectorResource(Res.drawable.ic_badminton)),
-        SportUi("Gym", Color(0xFF6366F1), Icons.Filled.FitnessCenter),
-        SportUi("Golf", Color(0xFF84CC16), Icons.Filled.SportsGolf),
-        SportUi("Yoga", Color(0xFFE50833), Icons.Filled.SportsGolf)
-    )
 
 @Composable
 fun getSportsMap() =
@@ -1085,10 +1068,6 @@ fun getSportsMap() =
         "Golf" to SportUi("Golf", Color(0xFF84CC16), Icons.Filled.SportsGolf),
         "Yoga" to SportUi("Yoga", Color(0xFFE50833), Icons.Filled.SelfImprovement) // Added appropriate icon
     )
-
-
-
-
 
 
 sealed class Text2StyleToken() {

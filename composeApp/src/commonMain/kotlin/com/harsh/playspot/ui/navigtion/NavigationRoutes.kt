@@ -6,6 +6,7 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.harsh.playspot.ui.events.CreateEventScreenRoute
 import com.harsh.playspot.ui.home.HomeScreenRoute
 import com.harsh.playspot.ui.login.LoginScreenRoute
 import com.harsh.playspot.ui.profile.AddProfilePictureScreenRoute
@@ -102,6 +103,9 @@ fun NavigationRoutes(hasUserSession: Boolean, onBackPressed: () -> Unit) {
                 },
                 onAddSportClicked = {
                     navController.navigate("Route.EditSports")
+                },
+                onCreateEventClicked = {
+                    navController.navigate("Route.CreateEvent")
                 }
             )
         }
@@ -110,6 +114,13 @@ fun NavigationRoutes(hasUserSession: Boolean, onBackPressed: () -> Unit) {
             PreferenceSetupRoute(
                 onBackPressed = { navController.popBackStack() },
                 onContinueClicked = { navController.popBackStack() }
+            )
+        }
+
+        composable("Route.CreateEvent") {
+            CreateEventScreenRoute(
+                onBackPressed = { navController.popBackStack() },
+                onEventCreated = { navController.popBackStack() }
             )
         }
     }

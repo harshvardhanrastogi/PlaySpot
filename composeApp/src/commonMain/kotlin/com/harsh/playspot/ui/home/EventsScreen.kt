@@ -66,6 +66,18 @@ import com.harsh.playspot.ui.core.TitleMedium
 import com.harsh.playspot.ui.core.extendedColors
 import com.harsh.playspot.ui.core.getSportsMap
 import com.harsh.playspot.ui.core.semiCircleCornerShape
+import org.jetbrains.compose.resources.stringResource
+import playspot.composeapp.generated.resources.Res
+import playspot.composeapp.generated.resources.events_add
+import playspot.composeapp.generated.resources.events_add_event
+import playspot.composeapp.generated.resources.events_individual_training
+import playspot.composeapp.generated.resources.events_notifications
+import playspot.composeapp.generated.resources.events_see_all
+import playspot.composeapp.generated.resources.events_suggested_for_you
+import playspot.composeapp.generated.resources.events_tab_attending
+import playspot.composeapp.generated.resources.events_tab_organizing
+import playspot.composeapp.generated.resources.events_title
+import playspot.composeapp.generated.resources.events_upcoming_matches
 
 data class SportEvent(
     val sport: SportUi,
@@ -86,8 +98,12 @@ enum class EventStatus(val label: String, val color: Color, val bgColor: Color) 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun EventsScreen() {
-    var selectedTab by remember { mutableStateOf("Attending") }
+fun EventsScreen(
+    onCreateEventClick: () -> Unit = {}
+) {
+    val tabAttending = stringResource(Res.string.events_tab_attending)
+    val tabOrganizing = stringResource(Res.string.events_tab_organizing)
+    var selectedTab by remember { mutableStateOf(tabAttending) }
 
     val football = getSportsMap()["Football"] ?: return
     val tennis = getSportsMap()["Tennis"] ?: return
@@ -168,7 +184,7 @@ fun EventsScreen() {
                             )
                         }
                         TitleMedium(
-                            text = "My Sports Events",
+                            text = stringResource(Res.string.events_title),
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.extendedColors.textDark
                         )
@@ -186,7 +202,7 @@ fun EventsScreen() {
                         IconButton(onClick = { }) {
                             Icon(
                                 imageVector = Icons.Filled.Notifications,
-                                contentDescription = "Notifications",
+                                contentDescription = stringResource(Res.string.events_notifications),
                                 tint = MaterialTheme.colorScheme.outlineVariant
                             )
                         }
@@ -199,7 +215,7 @@ fun EventsScreen() {
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { },
+                onClick = onCreateEventClick,
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = Color.White,
                 shape = CircleShape,
@@ -207,7 +223,7 @@ fun EventsScreen() {
             ) {
                 Icon(
                     imageVector = Icons.Filled.Add,
-                    contentDescription = "Add Event",
+                    contentDescription = stringResource(Res.string.events_add_event),
                     modifier = Modifier.size(28.dp)
                 )
             }
@@ -223,6 +239,7 @@ fun EventsScreen() {
             // Tab Switcher
             item {
                 TabSwitcher(
+                    tabs = listOf(tabAttending, tabOrganizing),
                     selectedTab = selectedTab,
                     onTabSelected = { selectedTab = it }
                 )
@@ -236,12 +253,12 @@ fun EventsScreen() {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     TitleMedium(
-                        text = "Upcoming Matches",
+                        text = stringResource(Res.string.events_upcoming_matches),
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.extendedColors.textDark
                     )
                     LabelLarge(
-                        text = "See all",
+                        text = stringResource(Res.string.events_see_all),
                         fontWeight = FontWeight.Medium,
                         color = MaterialTheme.colorScheme.primary
                     )
@@ -257,7 +274,7 @@ fun EventsScreen() {
             item {
                 Spacer(modifier = Modifier.height(8.dp))
                 TitleMedium(
-                    text = "Suggested For You",
+                    text = stringResource(Res.string.events_suggested_for_you),
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.extendedColors.textDark
                 )
@@ -278,10 +295,10 @@ fun EventsScreen() {
 
 @Composable
 private fun TabSwitcher(
+    tabs: List<String>,
     selectedTab: String,
     onTabSelected: (String) -> Unit
 ) {
-    val tabs = listOf("Attending", "Organizing")
 
     Row(
         modifier = Modifier
@@ -414,7 +431,7 @@ private fun EventCard(event: SportEvent) {
                     }
                 } else {
                     LabelSmall(
-                        text = "Individual training",
+                        text = stringResource(Res.string.events_individual_training),
                         color = MaterialTheme.colorScheme.outlineVariant,
                         modifier = Modifier.padding(top = 4.dp)
                     )
@@ -541,7 +558,7 @@ private fun SuggestedCard(title: String, distance: String) {
         ) {
             Icon(
                 imageVector = Icons.Filled.Add,
-                contentDescription = "Add",
+                contentDescription = stringResource(Res.string.events_add),
                 tint = Color.White,
                 modifier = Modifier.size(18.dp)
             )
