@@ -53,11 +53,10 @@ import com.harsh.playspot.ui.core.Padding
 import com.harsh.playspot.ui.core.ProfileAction
 import com.harsh.playspot.ui.core.clickWithFeedback
 import com.harsh.playspot.ui.core.extendedColors
+import com.harsh.playspot.isIOS
 import com.preat.peekaboo.image.picker.SelectionMode
 import com.preat.peekaboo.image.picker.rememberImagePickerLauncher
 import com.preat.peekaboo.image.picker.toImageBitmap
-import com.preat.peekaboo.ui.camera.PeekabooCamera
-import com.preat.peekaboo.ui.camera.rememberPeekabooCameraState
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
@@ -79,9 +78,8 @@ fun AddProfilePictureScreenRoute(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val scope = rememberCoroutineScope()
-    var showCamera by remember { mutableStateOf(false) }
 
-    // Gallery picker
+    // Gallery picker - works on both platforms
     val galleryLauncher = rememberImagePickerLauncher(
         selectionMode = SelectionMode.Single,
         scope = scope,
@@ -92,51 +90,24 @@ fun AddProfilePictureScreenRoute(
         }
     )
 
-    // Camera state
-    val cameraState = rememberPeekabooCameraState(
-        onCapture = { bytes ->
-            bytes?.let {
-                viewModel.onImageSelected(it)
+    AddProfilePictureScreen(
+        onBackPressed = onBackPressed,
+        onSkipClicked = onSkipClicked,
+        onGalleryClicked = { galleryLauncher.launch() },
+        // Camera is disabled on iOS due to UIKitView compatibility issues
+        onCameraClicked = { 
+            if (!isIOS) {
+                // TODO: Re-enable camera when Peekaboo is compatible with Compose 1.9.x
+                // For now, fall back to gallery on iOS
+                galleryLauncher.launch()
+            } else {
+                galleryLauncher.launch()
             }
-            showCamera = false
-        }
+        },
+        onSaveClicked = onSaveClicked,
+        selectedImageBytes = uiState.selectedImageBytes,
+        showCameraOption = !isIOS // Hide camera option on iOS
     )
-
-    if (showCamera) {
-        // Full-screen camera
-        PeekabooCamera(
-            state = cameraState,
-            modifier = Modifier.fillMaxSize(),
-            permissionDeniedContent = {
-                // Permission denied UI
-                Box(
-                    modifier = Modifier.fillMaxSize().background(Color.Black),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        LabelLarge(
-                            text = "Camera permission required",
-                            color = Color.White
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        LargeButton(
-                            label = "Go Back",
-                            onClick = { showCamera = false }
-                        )
-                    }
-                }
-            }
-        )
-    } else {
-        AddProfilePictureScreen(
-            onBackPressed = onBackPressed,
-            onSkipClicked = onSkipClicked,
-            onGalleryClicked = { galleryLauncher.launch() },
-            onCameraClicked = { showCamera = true },
-            onSaveClicked = onSaveClicked,
-            selectedImageBytes = uiState.selectedImageBytes
-        )
-    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -147,7 +118,8 @@ fun AddProfilePictureScreen(
     onGalleryClicked: () -> Unit = {},
     onCameraClicked: () -> Unit = {},
     onSaveClicked: () -> Unit = {},
-    selectedImageBytes: ByteArray? = null
+    selectedImageBytes: ByteArray? = null,
+    showCameraOption: Boolean = true
 ) {
     AppTheme {
         Scaffold(
@@ -245,22 +217,25 @@ fun AddProfilePictureScreen(
                         onActionClick = onGalleryClicked
                     )
 
-                    ProfileAction(
-                        icon = Icons.Filled.PhotoCamera,
-                        iconTint = MaterialTheme.colorScheme.primary,
-                        iconBgColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                        text = stringResource(Res.string.profile_picture_take_photo),
-                        desc = "",
-                        trailing = {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.outline,
-                                modifier = Modifier.size(16.dp)
-                            )
-                        },
-                        onActionClick = onCameraClicked
-                    )
+                    // Camera option - hidden on iOS due to UIKitView compatibility
+                    if (showCameraOption) {
+                        ProfileAction(
+                            icon = Icons.Filled.PhotoCamera,
+                            iconTint = MaterialTheme.colorScheme.primary,
+                            iconBgColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                            text = stringResource(Res.string.profile_picture_take_photo),
+                            desc = "",
+                            trailing = {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.outline,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            },
+                            onActionClick = onCameraClicked
+                        )
+                    }
                 }
 
                 Spacer(modifier = Modifier.weight(1f))

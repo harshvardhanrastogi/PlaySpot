@@ -53,9 +53,8 @@ kotlin {
             implementation(libs.kotlinx.coroutines.core)
             // GitLive Firebase Firestore
             implementation(libs.firebase.firestore)
-            // Peekaboo Image Picker & Camera
+            // Peekaboo Image Picker (camera disabled on iOS due to UIKitView compatibility)
             implementation(libs.peekaboo.image.picker)
-            implementation(libs.peekaboo.ui)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

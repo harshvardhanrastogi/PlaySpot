@@ -12,8 +12,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.input.TextFieldState
-import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.EmojiEvents
@@ -34,7 +32,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
@@ -98,15 +95,6 @@ fun PersonalDetailsScreenRoute(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
-    val bioTextFieldState = rememberTextFieldState(initialText = uiState.bio)
-
-    // Sync bio text field with ViewModel
-    LaunchedEffect(bioTextFieldState) {
-        snapshotFlow { bioTextFieldState.text.toString() }
-            .collectLatest { text ->
-                viewModel.onBioChange(text)
-            }
-    }
 
     LaunchedEffect(Unit) {
         viewModel.events.collectLatest { event ->
@@ -120,7 +108,8 @@ fun PersonalDetailsScreenRoute(
     PersonalDetailsScreen(
         uiState = uiState,
         snackbarHostState = snackbarHostState,
-        bioTextFieldState = bioTextFieldState,
+        bioText = uiState.bio,
+        onBioChange = viewModel::onBioChange,
         onBackPressed = onBackPressed,
         onSkipClicked = onSkipClicked,
         onSkillLevelChange = viewModel::onSkillLevelChange,
@@ -134,7 +123,8 @@ fun PersonalDetailsScreenRoute(
 fun PersonalDetailsScreen(
     uiState: PersonalDetailsUiState = PersonalDetailsUiState(),
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
-    bioTextFieldState: TextFieldState = rememberTextFieldState(),
+    bioText: String = "",
+    onBioChange: (String) -> Unit = {},
     onBackPressed: () -> Unit = {},
     onSkipClicked: () -> Unit = {},
     onSkillLevelChange: (SkillLevel) -> Unit = {},
@@ -164,7 +154,10 @@ fun PersonalDetailsScreen(
                     text = stringResource(Res.string.pref_set_up_finish_profile_desc),
                     color = TextMediumDark
                 )
-                UserBioTextField(bioTextFieldState)
+                UserBioTextField(
+                    bioText = bioText,
+                    onBioChange = onBioChange
+                )
 
                 UserSkillLevelSelection(
                     selectedSkillLevel = uiState.skillLevel,
@@ -242,7 +235,10 @@ fun UserSkillLevelSelection(
 
 
 @Composable
-fun UserBioTextField(bioTextFieldState: TextFieldState) {
+fun UserBioTextField(
+    bioText: String,
+    onBioChange: (String) -> Unit
+) {
     val hapticFeedback = LocalHapticFeedback.current
     val charLimit = 200
     val shape = RoundedCornerShape(size = 22.dp)
@@ -278,7 +274,12 @@ fun UserBioTextField(bioTextFieldState: TextFieldState) {
             )
     ) {
         BasicTextField(
-            state = bioTextFieldState,
+            value = bioText,
+            onValueChange = { newText ->
+                if (newText.length <= charLimit) {
+                    onBioChange(newText)
+                }
+            },
             modifier = Modifier
                 .fillMaxSize()
                 .padding(Padding.padding16Dp)
@@ -290,9 +291,9 @@ fun UserBioTextField(bioTextFieldState: TextFieldState) {
                 },
             textStyle = Text2StyleToken.BodyMedium.toTextStyle()
                 .copy(color = MaterialTheme.extendedColors.textDark),
-            decorator = { innerTextField ->
+            decorationBox = { innerTextField ->
                 Box {
-                    if (bioTextFieldState.text.isEmpty()) {
+                    if (bioText.isEmpty()) {
                         BodyMedium(
                             text = "I usually play as a striker, looking for casual games on weekends...",
                             color = TextLighterGray
@@ -304,7 +305,7 @@ fun UserBioTextField(bioTextFieldState: TextFieldState) {
         )
 
         Text(
-            text = "${bioTextFieldState.text.length} / $charLimit",
+            text = "${bioText.length} / $charLimit",
             style = Text2StyleToken.LabelSmall.toTextStyle(),
             color = TextLighterGray.copy(alpha = 0.7f),
             modifier = Modifier

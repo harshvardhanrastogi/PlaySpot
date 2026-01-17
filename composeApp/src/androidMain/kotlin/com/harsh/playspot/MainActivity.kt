@@ -10,7 +10,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
-import com.google.firebase.firestore.firestore
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -35,8 +34,8 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun configureFirebaseServices() {
-        Firebase.auth.useEmulator("192.168.29.221", 9099)
-        Firebase.firestore.useEmulator("192.168.29.221", 8080)
+//        Firebase.auth.useEmulator("192.168.29.221", 9099)
+//        Firebase.firestore.useEmulator("192.168.29.221", 8080)
     }
 }
 

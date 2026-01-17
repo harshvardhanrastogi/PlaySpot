@@ -5,3 +5,9 @@ interface Platform {
 }
 
 expect fun getPlatform(): Platform
+
+/**
+ * Platform detection utilities
+ */
+expect val isIOS: Boolean
+expect val isAndroid: Boolean
