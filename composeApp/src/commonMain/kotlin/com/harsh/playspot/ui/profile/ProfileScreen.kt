@@ -6,6 +6,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -17,6 +18,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -30,6 +32,7 @@ import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.SportsScore
 import androidx.compose.material.icons.filled.Verified
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -128,22 +131,42 @@ fun ProfileScreenRoute(
             when (event) {
                 is ProfileEvent.LogoutSuccess -> onLogoutSuccess()
                 is ProfileEvent.LogoutError -> snackbarHostState.showSnackbar(event.message)
+                is ProfileEvent.SaveSuccess -> snackbarHostState.showSnackbar("Profile updated!")
+                is ProfileEvent.SaveError -> snackbarHostState.showSnackbar(event.message)
             }
         }
     }
 
     ProfileScreen(
-        onBackPressed = onBackPressed,
+        onBackPressed = {
+            if (uiState.isEditing) {
+                viewModel.cancelEditing()
+            } else {
+                onBackPressed()
+            }
+        },
+        onEditProfileClicked = { viewModel.startEditing() },
         onLogoutClicked = { viewModel.logout() },
         onAddSportClicked = onAddSportClicked,
+        onBioChange = viewModel::onBioChange,
+        onSkillLevelChange = viewModel::onSkillLevelChange,
+        onPlayTimeToggle = viewModel::onPlayTimeToggle,
+        onSaveClicked = viewModel::saveChanges,
+        onCancelEditClicked = viewModel::cancelEditing,
         isLoggingOut = uiState.isLoggingOut,
+        isSaving = uiState.isSaving,
+        isEditing = uiState.isEditing,
+        hasUnsavedChanges = uiState.hasUnsavedChanges,
         snackbarHostState = snackbarHostState,
         name = uiState.name,
         username = uiState.username,
         location = uiState.location,
         bio = uiState.bio,
+        editedBio = uiState.editedBio,
         skillLevel = uiState.skillLevel,
+        editedSkillLevel = uiState.editedSkillLevel,
         playTimes = uiState.playTimes,
+        editedPlayTimes = uiState.editedPlayTimes,
         preferredSports = uiState.preferredSports
     )
 }
@@ -160,14 +183,25 @@ fun ProfileScreen(
     onHelpClicked: () -> Unit = {},
     onLogoutClicked: () -> Unit = {},
     onAddSportClicked: () -> Unit = {},
+    onBioChange: (String) -> Unit = {},
+    onSkillLevelChange: (String) -> Unit = {},
+    onPlayTimeToggle: (String) -> Unit = {},
+    onSaveClicked: () -> Unit = {},
+    onCancelEditClicked: () -> Unit = {},
     isLoggingOut: Boolean = false,
+    isSaving: Boolean = false,
+    isEditing: Boolean = false,
+    hasUnsavedChanges: Boolean = false,
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
     name: String = "Alex Johnson",
     username: String = "@alex_j",
     location: String = "San Francisco, CA",
     bio: String = "",
+    editedBio: String = "",
     skillLevel: String = "",
+    editedSkillLevel: String = "",
     playTimes: List<String> = emptyList(),
+    editedPlayTimes: List<String> = emptyList(),
     preferredSports: List<String> = emptyList()
 ) {
     val scrollState = rememberScrollState()
@@ -178,20 +212,34 @@ fun ProfileScreen(
             topBar = {
                 TopAppBar(
                     navigationIcon = {
-                        Icon(
-                            modifier = Modifier
-                                .minimumInteractiveComponentSize()
-                                .clickWithFeedback(HapticFeedbackType.Confirm) {
-                                    onBackPressed()
-                                },
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back",
-                            tint = MaterialTheme.extendedColors.textDark
-                        )
+                        if (isEditing) {
+                            // Cancel button when editing
+                            LabelLarge(
+                                text = "Cancel",
+                                color = MaterialTheme.colorScheme.error,
+                                fontWeight = FontWeight.SemiBold,
+                                modifier = Modifier
+                                    .minimumInteractiveComponentSize()
+                                    .clickWithFeedback(HapticFeedbackType.Confirm) {
+                                        onCancelEditClicked()
+                                    }
+                            )
+                        } else {
+                            Icon(
+                                modifier = Modifier
+                                    .minimumInteractiveComponentSize()
+                                    .clickWithFeedback(HapticFeedbackType.Confirm) {
+                                        onBackPressed()
+                                    },
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Back",
+                                tint = MaterialTheme.extendedColors.textDark
+                            )
+                        }
                     },
                     title = {
                         Text(
-                            text = stringResource(Res.string.profile_title),
+                            text = if (isEditing) "Edit Profile" else stringResource(Res.string.profile_title),
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.fillMaxWidth(),
@@ -199,16 +247,44 @@ fun ProfileScreen(
                         )
                     },
                     actions = {
-                        Icon(
-                            modifier = Modifier
-                                .minimumInteractiveComponentSize()
-                                .clickWithFeedback(HapticFeedbackType.Confirm) {
-                                    onShareClicked()
-                                },
-                            imageVector = Icons.Filled.Share,
-                            contentDescription = "Share",
-                            tint = MaterialTheme.colorScheme.primary
-                        )
+                        if (isEditing && hasUnsavedChanges) {
+                            // Save button when editing with changes
+                            if (isSaving) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier
+                                        .padding(horizontal = 16.dp)
+                                        .size(24.dp),
+                                    strokeWidth = 2.dp,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            } else {
+                                LabelLarge(
+                                    text = "Save",
+                                    color = MaterialTheme.colorScheme.primary,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier
+                                        .minimumInteractiveComponentSize()
+                                        .clickWithFeedback(HapticFeedbackType.Confirm) {
+                                            onSaveClicked()
+                                        }
+                                )
+                            }
+                        } else if (isEditing) {
+                            // Empty space to balance the toolbar when editing without changes
+                            Spacer(modifier = Modifier.minimumInteractiveComponentSize())
+                        } else {
+                            // Edit button when not editing
+                            LabelLarge(
+                                text = "Edit",
+                                color = MaterialTheme.colorScheme.primary,
+                                fontWeight = FontWeight.SemiBold,
+                                modifier = Modifier
+                                    .minimumInteractiveComponentSize()
+                                    .clickWithFeedback(HapticFeedbackType.Confirm) {
+                                        onEditProfileClicked()
+                                    }
+                            )
+                        }
                     },
                     colors = TopAppBarDefaults.topAppBarColors()
                         .copy(containerColor = MaterialTheme.colorScheme.background)
@@ -237,22 +313,31 @@ fun ProfileScreen(
                 Spacer(modifier = Modifier.height(24.dp))
 
                 // Bio Section
-                if (bio.isNotEmpty()) {
-                    BioSection(bio = bio)
-                    Spacer(modifier = Modifier.height(24.dp))
-                }
+                BioSection(
+                    bio = if (isEditing) editedBio else bio,
+                    isEditing = isEditing,
+                    onBioChange = onBioChange
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
 
                 // Skill Level Section
-                if (skillLevel.isNotEmpty()) {
-                    SkillLevelSection(skillLevel = skillLevel)
-                    Spacer(modifier = Modifier.height(24.dp))
-                }
+                SkillLevelSection(
+                    skillLevel = if (isEditing) editedSkillLevel else skillLevel,
+                    isEditing = isEditing,
+                    onSkillLevelChange = onSkillLevelChange
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
 
                 // Play Time Section
-                if (playTimes.isNotEmpty()) {
-                    PlayTimeSection(playTimes = playTimes)
-                    Spacer(modifier = Modifier.height(24.dp))
-                }
+                PlayTimeSection(
+                    playTimes = if (isEditing) editedPlayTimes else playTimes,
+                    isEditing = isEditing,
+                    onPlayTimeToggle = onPlayTimeToggle
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
 
                 // My Sports Section
                 MySportsSection(
@@ -789,7 +874,11 @@ private fun SettingsItem(
 }
 
 @Composable
-private fun BioSection(bio: String) {
+private fun BioSection(
+    bio: String,
+    isEditing: Boolean = false,
+    onBioChange: (String) -> Unit = {}
+) {
     val shape = RoundedCornerShape(12.dp)
 
     Column(modifier = Modifier.padding(horizontal = Padding.padding16Dp)) {
@@ -803,7 +892,7 @@ private fun BioSection(bio: String) {
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // Bio Text
+        // Bio Text or TextField when editing
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -811,24 +900,55 @@ private fun BioSection(bio: String) {
                 .background(MaterialTheme.extendedColors.widgetBg)
                 .border(
                     width = 1.dp,
-                    color = MaterialTheme.extendedColors.outline,
+                    color = if (isEditing) MaterialTheme.colorScheme.primary else MaterialTheme.extendedColors.outline,
                     shape = shape
                 )
                 .padding(Padding.padding16Dp)
         ) {
-            BodyMedium(
-                text = bio,
-                color = MaterialTheme.extendedColors.textDark
-            )
+            if (isEditing) {
+                BasicTextField(
+                    value = bio,
+                    onValueChange = onBioChange,
+                    modifier = Modifier.fillMaxWidth().height(80.dp),
+                    textStyle = MaterialTheme.typography.bodyMedium.copy(
+                        color = MaterialTheme.extendedColors.textDark
+                    ),
+                    decorationBox = { innerTextField ->
+                        Box {
+                            if (bio.isEmpty()) {
+                                BodyMedium(
+                                    text = "Tell others about yourself...",
+                                    color = MaterialTheme.colorScheme.outlineVariant
+                                )
+                            }
+                            innerTextField()
+                        }
+                    }
+                )
+            } else if (bio.isNotEmpty()) {
+                BodyMedium(
+                    text = bio,
+                    color = MaterialTheme.extendedColors.textDark
+                )
+            } else {
+                BodyMedium(
+                    text = "Tell others about yourself...",
+                    color = MaterialTheme.colorScheme.outlineVariant
+                )
+            }
         }
     }
 }
 
 @Composable
-private fun SkillLevelSection(skillLevel: String) {
+private fun SkillLevelSection(
+    skillLevel: String,
+    isEditing: Boolean = false,
+    onSkillLevelChange: (String) -> Unit = {}
+) {
     val skillLevelStates = getSkillLevelStates()
     val selectedSkillLevelState = skillLevelStates.find { it.skillLevel.name == skillLevel }
-        ?: return
+    val shape = RoundedCornerShape(12.dp)
 
     Column(modifier = Modifier.padding(horizontal = Padding.padding16Dp)) {
         // Section Header
@@ -841,48 +961,130 @@ private fun SkillLevelSection(skillLevel: String) {
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // Selected Skill Level Card
-        val shape = RoundedCornerShape(12.dp)
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(shape)
-                .background(MaterialTheme.extendedColors.widgetBg)
-                .border(
-                    width = 1.dp,
-                    color = MaterialTheme.extendedColors.outline,
-                    shape = shape
-                )
-                .padding(Padding.padding16Dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            // Icon background
+        if (isEditing) {
+            // Editing mode - show all skill levels as selectable options
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                skillLevelStates.forEach { skillLevelState ->
+                    val isSelected = skillLevelState.skillLevel.name == skillLevel
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(shape)
+                            .background(MaterialTheme.extendedColors.widgetBg)
+                            .border(
+                                width = if (isSelected) 2.dp else 1.dp,
+                                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.extendedColors.outline,
+                                shape = shape
+                            )
+                            .clickWithFeedback(HapticFeedbackType.LongPress) {
+                                onSkillLevelChange(skillLevelState.skillLevel.name)
+                            }
+                            .padding(Padding.padding16Dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        // Icon background
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .background(skillLevelState.skillLevel.iconBgColor()),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = skillLevelState.skillLevel.iconRes,
+                                contentDescription = null,
+                                tint = skillLevelState.skillLevel.iconTint(),
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+
+                        Column(modifier = Modifier.weight(1f)) {
+                            LabelLarge(
+                                text = stringResource(skillLevelState.title),
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.extendedColors.textDark
+                            )
+                            LabelSmall(
+                                text = stringResource(skillLevelState.desc),
+                                color = MaterialTheme.colorScheme.outlineVariant,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+
+                        if (isSelected) {
+                            Icon(
+                                imageVector = Icons.Filled.Verified,
+                                contentDescription = "Selected",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
+                }
+            }
+        } else if (selectedSkillLevelState != null) {
+            // Display mode - show selected skill level
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(shape)
+                    .background(MaterialTheme.extendedColors.widgetBg)
+                    .border(
+                        width = 1.dp,
+                        color = MaterialTheme.extendedColors.outline,
+                        shape = shape
+                    )
+                    .padding(Padding.padding16Dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                // Icon background
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .background(selectedSkillLevelState.skillLevel.iconBgColor()),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = selectedSkillLevelState.skillLevel.iconRes,
+                        contentDescription = null,
+                        tint = selectedSkillLevelState.skillLevel.iconTint(),
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+
+                Column {
+                    LabelLarge(
+                        text = stringResource(selectedSkillLevelState.title),
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.extendedColors.textDark
+                    )
+                    LabelSmall(
+                        text = stringResource(selectedSkillLevelState.desc),
+                        color = MaterialTheme.colorScheme.outlineVariant,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            }
+        } else {
+            // Empty State
             Box(
                 modifier = Modifier
-                    .size(40.dp)
-                    .clip(CircleShape)
-                    .background(selectedSkillLevelState.skillLevel.iconBgColor()),
-                contentAlignment = Alignment.Center
+                    .fillMaxWidth()
+                    .clip(shape)
+                    .background(MaterialTheme.extendedColors.widgetBg)
+                    .border(
+                        width = 1.dp,
+                        color = MaterialTheme.extendedColors.outline,
+                        shape = shape
+                    )
+                    .padding(Padding.padding16Dp)
             ) {
-                Icon(
-                    imageVector = selectedSkillLevelState.skillLevel.iconRes,
-                    contentDescription = null,
-                    tint = selectedSkillLevelState.skillLevel.iconTint(),
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-
-            Column {
-                LabelLarge(
-                    text = stringResource(selectedSkillLevelState.title),
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.extendedColors.textDark
-                )
-                LabelSmall(
-                    text = stringResource(selectedSkillLevelState.desc),
-                    color = MaterialTheme.colorScheme.outlineVariant,
-                    fontWeight = FontWeight.Medium
+                BodyMedium(
+                    text = "Select your skill level...",
+                    color = MaterialTheme.colorScheme.outlineVariant
                 )
             }
         }
@@ -890,7 +1092,14 @@ private fun SkillLevelSection(skillLevel: String) {
 }
 
 @Composable
-private fun PlayTimeSection(playTimes: List<String>) {
+private fun PlayTimeSection(
+    playTimes: List<String>,
+    isEditing: Boolean = false,
+    onPlayTimeToggle: (String) -> Unit = {}
+) {
+    val shape = RoundedCornerShape(12.dp)
+    val allPlayTimes = listOf("Morning", "Afternoon", "Evening", "Night", "Weekends")
+
     Column(modifier = Modifier.padding(horizontal = Padding.padding16Dp)) {
         // Section Header
         TitleMedium(
@@ -902,16 +1111,84 @@ private fun PlayTimeSection(playTimes: List<String>) {
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // Play Time Chips
-        val shape = RoundedCornerShape(12.dp)
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            playTimes.forEach { playTime ->
-                PlayTimeChip(label = playTime)
+        if (isEditing) {
+            // Editing mode - show all play times as toggleable chips
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                allPlayTimes.forEach { playTime ->
+                    val isSelected = playTimes.contains(playTime)
+                    EditablePlayTimeChip(
+                        label = playTime,
+                        isSelected = isSelected,
+                        onClick = { onPlayTimeToggle(playTime) }
+                    )
+                }
+            }
+        } else if (playTimes.isNotEmpty()) {
+            // Display mode - show selected play times
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                playTimes.forEach { playTime ->
+                    PlayTimeChip(label = playTime)
+                }
+            }
+        } else {
+            // Empty State
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(shape)
+                    .background(MaterialTheme.extendedColors.widgetBg)
+                    .border(
+                        width = 1.dp,
+                        color = MaterialTheme.extendedColors.outline,
+                        shape = shape
+                    )
+                    .padding(Padding.padding16Dp)
+            ) {
+                BodyMedium(
+                    text = "When do you usually play?",
+                    color = MaterialTheme.colorScheme.outlineVariant
+                )
             }
         }
+    }
+}
+
+@Composable
+private fun EditablePlayTimeChip(
+    label: String,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    val shape = RoundedCornerShape(12.dp)
+
+    Box(
+        modifier = Modifier
+            .clip(shape)
+            .background(
+                if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                else MaterialTheme.extendedColors.widgetBg
+            )
+            .border(
+                width = if (isSelected) 2.dp else 1.dp,
+                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.extendedColors.outline,
+                shape = shape
+            )
+            .clickWithFeedback(HapticFeedbackType.LongPress) { onClick() }
+            .padding(horizontal = Padding.padding16Dp, vertical = 14.dp)
+    ) {
+        LabelLarge(
+            text = label,
+            fontWeight = FontWeight.SemiBold,
+            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.extendedColors.textDark
+        )
     }
 }
 
