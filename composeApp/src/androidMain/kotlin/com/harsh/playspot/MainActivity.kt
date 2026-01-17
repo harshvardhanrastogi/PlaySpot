@@ -10,6 +10,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
+import com.harsh.playspot.util.LocationProvider
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -22,6 +23,8 @@ class MainActivity : ComponentActivity() {
         )
         super.onCreate(savedInstanceState)
         configureFirebaseServices()
+        // Initialize LocationProvider for location services
+        LocationProvider.initialize(this)
         setContent {
             App(hasUserSession(), onBackPressed = {
                 finish()

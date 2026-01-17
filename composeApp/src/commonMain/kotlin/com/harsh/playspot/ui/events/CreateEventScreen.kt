@@ -129,7 +129,9 @@ fun CreateEventScreenRoute(
             onLocationSelected = { name, address ->
                 viewModel.onLocationChange(name, address)
                 showLocationSelection = false
-            }
+            },
+            cityLatitude = 28.9845,
+            cityLongitude = 77.7064
         )
     } else {
         CreateEventScreen(
