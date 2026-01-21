@@ -26,7 +26,7 @@ data class LocationSelectionUiState(
     // User's current city location for search restriction
     val userCityLat: Double? = null,
     val userCityLng: Double? = null,
-    val searchRadiusMeters: Int = 15000, // 15km radius for city-level search
+    val searchRadiusMeters: Int = 8000, // 8km strict radius limit
     // Current location fetching state
     val isFetchingLocation: Boolean = false,
     val hasLocationPermission: Boolean = false

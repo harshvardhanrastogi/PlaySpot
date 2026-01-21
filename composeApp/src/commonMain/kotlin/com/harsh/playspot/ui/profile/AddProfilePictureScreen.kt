@@ -19,14 +19,18 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.PhotoCamera
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -44,6 +48,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 import com.harsh.playspot.ui.core.AppTheme
 import com.harsh.playspot.ui.core.BodyLarge
 import com.harsh.playspot.ui.core.HeadlineLarge
@@ -74,10 +80,33 @@ fun AddProfilePictureScreenRoute(
     onBackPressed: () -> Unit,
     onSkipClicked: () -> Unit,
     onSaveClicked: () -> Unit,
+    profileDocumentId: String? = null,
     viewModel: AddProfilePictureViewModel = viewModel { AddProfilePictureViewModel() }
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val scope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    // Listen for upload events
+    LaunchedEffect(Unit) {
+        viewModel.events.collectLatest { event ->
+            when (event) {
+                is ProfilePictureEvent.UploadSuccess -> {
+                    onSaveClicked()
+                }
+                is ProfilePictureEvent.UploadError -> {
+                    snackbarHostState.showSnackbar(event.message)
+                }
+            }
+        }
+    }
+
+    // Show error messages from uiState
+    LaunchedEffect(uiState.errorMessage) {
+        uiState.errorMessage?.let { error ->
+            snackbarHostState.showSnackbar(error)
+        }
+    }
 
     // Gallery picker - works on both platforms
     val galleryLauncher = rememberImagePickerLauncher(
@@ -104,9 +133,14 @@ fun AddProfilePictureScreenRoute(
                 galleryLauncher.launch()
             }
         },
-        onSaveClicked = onSaveClicked,
+        onSaveClicked = {
+            // Upload the image when save is clicked
+            viewModel.uploadProfilePicture(profileDocumentId)
+        },
         selectedImageBytes = uiState.selectedImageBytes,
-        showCameraOption = !isIOS // Hide camera option on iOS
+        isLoading = uiState.isLoading,
+        showCameraOption = !isIOS, // Hide camera option on iOS
+        snackbarHostState = snackbarHostState
     )
 }
 
@@ -119,10 +153,13 @@ fun AddProfilePictureScreen(
     onCameraClicked: () -> Unit = {},
     onSaveClicked: () -> Unit = {},
     selectedImageBytes: ByteArray? = null,
-    showCameraOption: Boolean = true
+    isLoading: Boolean = false,
+    showCameraOption: Boolean = true,
+    snackbarHostState: SnackbarHostState = remember { SnackbarHostState() }
 ) {
     AppTheme {
         Scaffold(
+            snackbarHost = { SnackbarHost(snackbarHostState) },
             topBar = {
                 TopAppBar(
                     navigationIcon = {
@@ -241,14 +278,26 @@ fun AddProfilePictureScreen(
                 Spacer(modifier = Modifier.weight(1f))
 
                 // Save & Continue Button
-                LargeButton(
+                Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(bottom = Padding.padding24Dp),
-                    label = stringResource(Res.string.profile_picture_save_continue),
-                    enabled = selectedImageBytes != null,
-                    onClick = onSaveClicked
-                )
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(48.dp),
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    } else {
+                        LargeButton(
+                            modifier = Modifier.fillMaxWidth(),
+                            label = stringResource(Res.string.profile_picture_save_continue),
+                            enabled = selectedImageBytes != null,
+                            onClick = onSaveClicked
+                        )
+                    }
+                }
             }
         }
     }

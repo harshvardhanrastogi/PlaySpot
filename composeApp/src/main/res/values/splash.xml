@@ -2,8 +2,7 @@
 <resources>
     <style name="AppTheme.Splash" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">#FFFFFF</item>
-        <item name="windowSplashScreenAnimatedIcon">@drawable/cropped_circle_image</item>
-        <item name="splashScreenIconSize">300dp</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_logo</item>
         <item name="postSplashScreenTheme">@style/AppTheme.Main</item>
     </style>
     

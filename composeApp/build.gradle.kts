@@ -1,6 +1,19 @@
 import com.codingfeline.buildkonfig.compiler.FieldSpec.Type.BOOLEAN
 import com.codingfeline.buildkonfig.compiler.FieldSpec.Type.STRING
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.util.Properties
+
+// Load local.properties
+val localProperties = Properties().apply {
+    val localPropertiesFile = rootProject.file("local.properties")
+    if (localPropertiesFile.exists()) {
+        load(localPropertiesFile.inputStream())
+    }
+}
+
+fun getLocalProperty(key: String, defaultValue: String = ""): String {
+    return localProperties.getProperty(key, defaultValue)
+}
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
@@ -34,6 +47,12 @@ kotlin {
             implementation(compose.preview)
             implementation(libs.androidx.activity.compose)
             implementation(libs.androidx.core.splashscreen)
+            // Ktor CIO engine for Android
+            implementation(libs.ktor.client.cio)
+            // Google Maps Compose
+            implementation(libs.maps.compose)
+            // Google Play Services Location
+            implementation(libs.play.services.location)
         }
         commonMain.dependencies {
             implementation(compose.runtime)
@@ -55,6 +74,17 @@ kotlin {
             implementation(libs.firebase.firestore)
             // Peekaboo Image Picker (camera disabled on iOS due to UIKitView compatibility)
             implementation(libs.peekaboo.image.picker)
+            // Ktor Client for HTTP requests
+            implementation(libs.ktor.client.core)
+            implementation(libs.ktor.client.content.negotiation)
+            implementation(libs.ktor.serialization.kotlinx.json)
+            // Coil Image Loading
+            implementation(libs.coil.compose)
+            implementation(libs.coil.network.ktor)
+        }
+        iosMain.dependencies {
+            // Ktor Darwin engine for iOS
+            implementation(libs.ktor.client.darwin)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -72,6 +102,9 @@ android {
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = 1
         versionName = "1.0"
+        
+        // Google Maps API Key for AndroidManifest
+        manifestPlaceholders["GOOGLE_MAPS_API_KEY"] = getLocalProperty("GOOGLE_MAPS_API_KEY")
     }
     packaging {
         resources {
@@ -101,6 +134,13 @@ buildkonfig {
         buildConfigField(STRING, "APP_NAME", "PlaySpot")
         buildConfigField(STRING, "VERSION_NAME", "1.0.0")
         buildConfigField(BOOLEAN, "DEBUG", "true")
+        // API Keys from local.properties
+        buildConfigField(STRING, "GOOGLE_PLACES_API_KEY", getLocalProperty("GOOGLE_PLACES_API_KEY"))
+        buildConfigField(STRING, "GOOGLE_MAPS_API_KEY", getLocalProperty("GOOGLE_MAPS_API_KEY"))
+        // ImageKit API Keys
+        buildConfigField(STRING, "IMAGEKIT_PUBLIC_KEY", getLocalProperty("IMAGEKIT_PUBLIC_KEY"))
+        buildConfigField(STRING, "IMAGEKIT_PRIVATE_KEY", getLocalProperty("IMAGEKIT_PRIVATE_KEY"))
+        buildConfigField(STRING, "IMAGEKIT_URL_ENDPOINT", getLocalProperty("IMAGEKIT_URL_ENDPOINT"))
     }
 
     defaultConfigs("release") {

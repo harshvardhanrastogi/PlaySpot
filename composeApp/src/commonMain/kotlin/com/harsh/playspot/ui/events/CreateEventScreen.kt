@@ -124,14 +124,18 @@ fun CreateEventScreenRoute(
     }
 
     if (showLocationSelection) {
-        LocationSelectionScreen(
+        LocationSelectionScreenWithDetails(
             onBackPressed = { showLocationSelection = false },
-            onLocationSelected = { name, address ->
-                viewModel.onLocationChange(name, address)
+            onLocationSelected = { name, address, placeId, lat, lng ->
+                viewModel.onLocationChange(
+                    name = name,
+                    address = address,
+                    placeId = placeId,
+                    latitude = lat,
+                    longitude = lng
+                )
                 showLocationSelection = false
-            },
-            cityLatitude = 28.9845,
-            cityLongitude = 77.7064
+            }
         )
     } else {
         CreateEventScreen(

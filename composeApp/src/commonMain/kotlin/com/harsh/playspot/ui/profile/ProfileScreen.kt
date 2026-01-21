@@ -1,6 +1,5 @@
 package com.harsh.playspot.ui.profile
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -29,7 +28,8 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.SportsScore
 import androidx.compose.material.icons.filled.Verified
 import androidx.compose.material3.CircularProgressIndicator
@@ -66,6 +66,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil3.compose.AsyncImage
 import com.harsh.playspot.ui.core.AppTheme
 import com.harsh.playspot.ui.core.BodyMedium
 import com.harsh.playspot.ui.core.DangerButton
@@ -80,11 +81,9 @@ import com.harsh.playspot.ui.core.TitleMedium
 import com.harsh.playspot.ui.core.clickWithFeedback
 import com.harsh.playspot.ui.core.extendedColors
 import com.harsh.playspot.ui.core.getSportsMap
-import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import playspot.composeapp.generated.resources.Res
-import playspot.composeapp.generated.resources.cropped_circle_image
 import playspot.composeapp.generated.resources.pref_set_up_finish_profile_bio
 import playspot.composeapp.generated.resources.pref_set_up_finish_profile_play_time_title
 import playspot.composeapp.generated.resources.pref_set_up_finish_profile_skill_level
@@ -107,6 +106,7 @@ fun ProfileScreenRoute(
     onBackPressed: () -> Unit,
     onLogoutSuccess: () -> Unit = {},
     onAddSportClicked: () -> Unit = {},
+    onEditPictureClicked: () -> Unit = {},
     viewModel: ProfileViewModel = viewModel { ProfileViewModel() }
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -146,6 +146,7 @@ fun ProfileScreenRoute(
             }
         },
         onEditProfileClicked = { viewModel.startEditing() },
+        onEditPictureClicked = onEditPictureClicked,
         onLogoutClicked = { viewModel.logout() },
         onAddSportClicked = onAddSportClicked,
         onBioChange = viewModel::onBioChange,
@@ -167,7 +168,8 @@ fun ProfileScreenRoute(
         editedSkillLevel = uiState.editedSkillLevel,
         playTimes = uiState.playTimes,
         editedPlayTimes = uiState.editedPlayTimes,
-        preferredSports = uiState.preferredSports
+        preferredSports = uiState.preferredSports,
+        profilePictureUrl = uiState.profilePictureUrl
     )
 }
 
@@ -177,6 +179,7 @@ fun ProfileScreen(
     onBackPressed: () -> Unit = {},
     onShareClicked: () -> Unit = {},
     onEditProfileClicked: () -> Unit = {},
+    onEditPictureClicked: () -> Unit = {},
     onViewHistoryClicked: () -> Unit = {},
     onNotificationsClicked: () -> Unit = {},
     onPrivacyClicked: () -> Unit = {},
@@ -202,7 +205,8 @@ fun ProfileScreen(
     editedSkillLevel: String = "",
     playTimes: List<String> = emptyList(),
     editedPlayTimes: List<String> = emptyList(),
-    preferredSports: List<String> = emptyList()
+    preferredSports: List<String> = emptyList(),
+    profilePictureUrl: String? = null
 ) {
     val scrollState = rememberScrollState()
 
@@ -302,7 +306,9 @@ fun ProfileScreen(
                     name = name.ifEmpty { "Alex Johnson" },
                     username = username.ifEmpty { "@alex_j" },
                     location = location.ifEmpty { "San Francisco, CA" },
-                    onEditProfileClicked = onEditProfileClicked
+                    profilePictureUrl = profilePictureUrl,
+                    onEditProfileClicked = onEditProfileClicked,
+                    onEditPictureClicked = onEditPictureClicked
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -367,7 +373,9 @@ private fun ProfileHeader(
     name: String,
     username: String,
     location: String,
-    onEditProfileClicked: () -> Unit
+    profilePictureUrl: String? = null,
+    onEditProfileClicked: () -> Unit,
+    onEditPictureClicked: () -> Unit = {}
 ) {
     Column(
         modifier = Modifier
@@ -376,62 +384,65 @@ private fun ProfileHeader(
             .padding(top = Padding.padding24Dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Avatar with Glow
+        // Avatar with Edit Badge
         Box(contentAlignment = Alignment.Center) {
-            // Gradient glow effect
-            Box(
-                modifier = Modifier
-                    .size(136.dp)
-                    .blur(8.dp)
-                    .background(
-                        brush = Brush.horizontalGradient(
-                            colors = listOf(
-                                MaterialTheme.colorScheme.primary,
-                                Color(0xFF60A5FA) // blue-400
-                            )
-                        ),
-                        shape = CircleShape
-                    )
-            )
-
             // Profile image
             Box(
                 modifier = Modifier
                     .size(128.dp)
                     .clip(CircleShape)
+                    .background(MaterialTheme.extendedColors.widgetBg)
                     .border(
                         width = 4.dp,
                         color = MaterialTheme.extendedColors.widgetBg,
                         shape = CircleShape
                     )
+                    .clickWithFeedback(HapticFeedbackType.LongPress) {
+                        onEditPictureClicked()
+                    },
+                contentAlignment = Alignment.Center
             ) {
-                Image(
-                    painter = painterResource(Res.drawable.cropped_circle_image),
-                    contentDescription = "Profile picture",
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop
-                )
+                if (!profilePictureUrl.isNullOrBlank()) {
+                    // Load profile picture from ImageKit
+                    AsyncImage(
+                        model = profilePictureUrl,
+                        contentDescription = "Profile picture",
+                        modifier = Modifier.fillMaxSize().clip(CircleShape),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    // Fallback to placeholder icon
+                    Icon(
+                        imageVector = Icons.Filled.Person,
+                        contentDescription = "Profile picture",
+                        modifier = Modifier.size(64.dp),
+                        tint = MaterialTheme.colorScheme.outlineVariant
+                    )
+                }
             }
 
-            // Verified badge
+            // Camera/Edit badge
             Box(
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
-                    .size(28.dp)
+                    .size(36.dp)
                     .clip(CircleShape)
-                    .background(MaterialTheme.extendedColors.widgetBg)
+                    .background(MaterialTheme.colorScheme.primary)
                     .border(
-                        width = 2.dp,
-                        color = MaterialTheme.extendedColors.outline,
+                        width = 3.dp,
+                        color = MaterialTheme.colorScheme.background,
                         shape = CircleShape
-                    ),
+                    )
+                    .clickWithFeedback(HapticFeedbackType.Confirm) {
+                        onEditPictureClicked()
+                    },
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    imageVector = Icons.Filled.Verified,
-                    contentDescription = "Verified",
-                    tint = MaterialTheme.extendedColors.green,
-                    modifier = Modifier.size(16.dp)
+                    imageVector = Icons.Filled.PhotoCamera,
+                    contentDescription = "Edit profile picture",
+                    tint = Color.White,
+                    modifier = Modifier.size(18.dp)
                 )
             }
         }

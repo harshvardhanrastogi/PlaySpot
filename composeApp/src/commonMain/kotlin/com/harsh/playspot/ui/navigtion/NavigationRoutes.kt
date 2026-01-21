@@ -7,6 +7,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.harsh.playspot.ui.events.CreateEventScreenRoute
+import com.harsh.playspot.ui.events.MyEventsScreen
+import com.harsh.playspot.ui.events.MyEventsScreenRoute
 import com.harsh.playspot.ui.home.HomeScreenRoute
 import com.harsh.playspot.ui.login.LoginScreenRoute
 import com.harsh.playspot.ui.profile.AddProfilePictureScreenRoute
@@ -106,7 +108,18 @@ fun NavigationRoutes(hasUserSession: Boolean, onBackPressed: () -> Unit) {
                 },
                 onCreateEventClicked = {
                     navController.navigate("Route.CreateEvent")
+                },
+                onEditPictureClicked = {
+                    navController.navigate("Route.EditProfilePicture")
                 }
+            )
+        }
+        
+        composable("Route.EditProfilePicture") {
+            AddProfilePictureScreenRoute(
+                onBackPressed = { navController.popBackStack() },
+                onSkipClicked = { navController.popBackStack() },
+                onSaveClicked = { navController.popBackStack() }
             )
         }
 
@@ -121,6 +134,16 @@ fun NavigationRoutes(hasUserSession: Boolean, onBackPressed: () -> Unit) {
             CreateEventScreenRoute(
                 onBackPressed = { navController.popBackStack() },
                 onEventCreated = { navController.popBackStack() }
+            )
+        }
+
+        composable("Route.MyEvents") {
+            MyEventsScreenRoute(
+                onBackPressed = { navController.popBackStack() },
+                onCreateEventClick = { navController.navigate("Route.CreateEvent") },
+                onEventClick = { eventId ->
+                    // TODO: Navigate to event details
+                }
             )
         }
     }

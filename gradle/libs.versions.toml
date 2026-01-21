@@ -24,6 +24,13 @@ gitlive-firebase = "2.1.0"
 buildkonfig = "0.15.2"
 # Image Picker
 peekaboo = "0.5.2"
+# Ktor Client
+ktor = "3.0.3"
+# Google Maps & Location
+maps-compose = "6.2.1"
+play-services-location = "21.3.0"
+# Coil Image Loading
+coil = "3.0.4"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -48,6 +55,19 @@ firebase-firestore = { module = "dev.gitlive:firebase-firestore", version.ref = 
 # Image Picker
 peekaboo-image-picker = { module = "io.github.onseok:peekaboo-image-picker", version.ref = "peekaboo" }
 peekaboo-ui = { module = "io.github.onseok:peekaboo-ui", version.ref = "peekaboo" }
+# Ktor Client
+ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
+ktor-client-cio = { module = "io.ktor:ktor-client-cio", version.ref = "ktor" }
+ktor-client-darwin = { module = "io.ktor:ktor-client-darwin", version.ref = "ktor" }
+ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor" }
+ktor-serialization-kotlinx-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktor" }
+# Google Maps Compose
+maps-compose = { module = "com.google.maps.android:maps-compose", version.ref = "maps-compose" }
+# Google Play Services Location
+play-services-location = { module = "com.google.android.gms:play-services-location", version.ref = "play-services-location" }
+# Coil Image Loading (Multiplatform)
+coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coil" }
+coil-network-ktor = { module = "io.coil-kt.coil3:coil-network-ktor3", version.ref = "coil" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

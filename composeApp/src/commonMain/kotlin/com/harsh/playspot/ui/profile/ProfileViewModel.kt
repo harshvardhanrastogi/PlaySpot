@@ -6,6 +6,7 @@ import com.harsh.playspot.dao.Profile
 import com.harsh.playspot.data.auth.AuthRepository
 import com.harsh.playspot.data.firestore.CollectionNames
 import com.harsh.playspot.data.firestore.FirestoreRepository
+import com.harsh.playspot.data.imagekit.ImageKitRepository
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -30,7 +31,8 @@ data class ProfileUiState(
     val editedSkillLevel: String = "",
     val playTimes: List<String> = emptyList(),
     val editedPlayTimes: List<String> = emptyList(),
-    val preferredSports: List<String> = emptyList()
+    val preferredSports: List<String> = emptyList(),
+    val profilePictureUrl: String? = null
 )
 
 sealed class ProfileEvent {
@@ -42,7 +44,8 @@ sealed class ProfileEvent {
 
 class ProfileViewModel(
     private val authRepository: AuthRepository = AuthRepository.getInstance(),
-    private val firestoreRepository: FirestoreRepository = FirestoreRepository.instance
+    private val firestoreRepository: FirestoreRepository = FirestoreRepository.instance,
+    private val imageKitRepository: ImageKitRepository = ImageKitRepository.getInstance()
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ProfileUiState())
@@ -69,6 +72,11 @@ class ProfileViewModel(
                 collection = CollectionNames.USER_PROFILE,
                 documentId = uid
             ).onSuccess { profile ->
+                // Get optimized profile picture URL if available
+                val optimizedPictureUrl = profile?.profilePictureUrl?.takeIf { it.isNotBlank() }?.let {
+                    imageKitRepository.getProfilePictureUrl(it, size = 256)
+                }
+                
                 _uiState.update {
                     it.copy(
                         isLoading = false,
@@ -78,7 +86,8 @@ class ProfileViewModel(
                         bio = profile?.bio ?: "",
                         skillLevel = profile?.skillLevel ?: "",
                         playTimes = profile?.playTime ?: emptyList(),
-                        preferredSports = profile?.preferredSports ?: emptyList()
+                        preferredSports = profile?.preferredSports ?: emptyList(),
+                        profilePictureUrl = optimizedPictureUrl
                     )
                 }
             }.onFailure {

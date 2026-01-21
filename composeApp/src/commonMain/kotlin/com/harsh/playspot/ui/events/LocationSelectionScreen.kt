@@ -637,6 +637,34 @@ private fun SelectedLocationCard(
     }
 }
 
+/**
+ * Wrapper composable that provides full venue details including coordinates
+ */
+@Composable
+fun LocationSelectionScreenWithDetails(
+    onBackPressed: () -> Unit,
+    onLocationSelected: (name: String, address: String, placeId: String, latitude: Double?, longitude: Double?) -> Unit,
+    viewModel: LocationSelectionViewModel = viewModel { LocationSelectionViewModel() }
+) {
+    val uiState by viewModel.uiState.collectAsState()
+    
+    LocationSelectionScreen(
+        onBackPressed = onBackPressed,
+        onLocationSelected = { name, address ->
+            // Get selected location details from ViewModel state
+            val selectedLocation = uiState.selectedLocation
+            onLocationSelected(
+                name,
+                address,
+                selectedLocation?.placeId ?: "",
+                selectedLocation?.latitude,
+                selectedLocation?.longitude
+            )
+        },
+        viewModel = viewModel
+    )
+}
+
 @Preview
 @Composable
 fun LocationSelectionScreenPreview() {

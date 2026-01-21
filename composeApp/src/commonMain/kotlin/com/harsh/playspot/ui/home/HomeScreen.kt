@@ -1,6 +1,7 @@
 package com.harsh.playspot.ui.home
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -41,6 +42,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.harsh.playspot.SetStatusBarAppearance
 import com.harsh.playspot.ui.core.AppTheme
 import com.harsh.playspot.ui.core.extendedColors
 import com.harsh.playspot.ui.profile.ProfileScreenRoute
@@ -55,8 +57,11 @@ data class BottomNavItem(
 fun HomeScreenRoute(
     onLogoutSuccess: () -> Unit = {},
     onAddSportClicked: () -> Unit = {},
-    onCreateEventClicked: () -> Unit = {}
+    onCreateEventClicked: () -> Unit = {},
+    onEditPictureClicked: () -> Unit = {}
 ) {
+    SetStatusBarAppearance(isDarkTheme = isSystemInDarkTheme())
+
     val navItems = listOf(
         BottomNavItem("Events", Icons.Filled.CalendarMonth, Icons.Outlined.CalendarMonth),
         BottomNavItem("Explore", Icons.Filled.Search, Icons.Outlined.Search),
@@ -124,7 +129,8 @@ fun HomeScreenRoute(
                     3 -> ProfileScreenRoute(
                         onBackPressed = { selectedTabIndex = 0 },
                         onLogoutSuccess = onLogoutSuccess,
-                        onAddSportClicked = onAddSportClicked
+                        onAddSportClicked = onAddSportClicked,
+                        onEditPictureClicked = onEditPictureClicked
                     )
                 }
             }

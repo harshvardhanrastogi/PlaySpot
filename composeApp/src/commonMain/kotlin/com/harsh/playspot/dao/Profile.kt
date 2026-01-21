@@ -11,5 +11,6 @@ data class Profile(
     val city: String = "",
     val playTime: List<String> = emptyList(),
     val skillLevel: String = "",
-    val preferredSports: List<String> = emptyList()
+    val preferredSports: List<String> = emptyList(),
+    val profilePictureUrl: String = ""
 )

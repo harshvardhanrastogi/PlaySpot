@@ -145,24 +145,41 @@ class PlacesRepository(
     // Venue suffixes for sport-specific searches
     private val venueSuffixes = listOf("court", "club", "academy", "ground", "arena", "center", "stadium")
 
+    companion object {
+        // Maximum search radius in meters (8km)
+        const val MAX_SEARCH_RADIUS_METERS = 8000
+        
+        @Volatile
+        private var instance: PlacesRepository? = null
+
+        fun getInstance(apiKey: String): PlacesRepository {
+            return instance ?: synchronized(this) {
+                instance ?: PlacesRepository(apiKey).also { instance = it }
+            }
+        }
+    }
+    
     /**
      * Search for places with priority on sports establishments
-     * Restricted to a specific location/city
+     * Strictly restricted to within 8km radius
      * 
      * @param query Search query
      * @param latitude Center latitude for location bias (also used for distance calculation)
      * @param longitude Center longitude for location bias (also used for distance calculation)
-     * @param radiusMeters Search radius in meters (default 10km for city-level search)
+     * @param radiusMeters Search radius in meters (max 8km, default 8km)
      * @param prioritizeSports Whether to prioritize sports-related venues
      */
     suspend fun searchPlaces(
         query: String,
         latitude: Double? = null,
         longitude: Double? = null,
-        radiusMeters: Int = 10000, // 10km radius for city-level search
+        radiusMeters: Int = MAX_SEARCH_RADIUS_METERS,
         prioritizeSports: Boolean = true
     ): Result<List<PlaceSearchResult>> {
         if (query.isBlank()) return Result.success(emptyList())
+        
+        // Enforce max radius of 8km
+        val effectiveRadius = minOf(radiusMeters, MAX_SEARCH_RADIUS_METERS)
 
         return try {
             // Build optimized query for sports venues
@@ -172,11 +189,11 @@ class PlacesRepository(
                 parameter("input", optimizedQuery)
                 parameter("key", apiKey)
                 
-                // Location bias - prefer results near user's location (soft bias, not strict)
+                // Strict location restriction - only results within radius
                 if (latitude != null && longitude != null) {
                     parameter("location", "$latitude,$longitude")
-                    parameter("radius", radiusMeters)
-                    // Don't use strictbounds - allow results outside radius but prefer nearby
+                    parameter("radius", effectiveRadius)
+                    parameter("strictbounds", "true") // Strictly enforce radius
                 }
             }.body()
 
@@ -196,8 +213,14 @@ class PlacesRepository(
                     }.awaitAll()
                 }
                 
+                // Filter out any results beyond 8km (double-check after getting actual coordinates)
+                val filteredResults = resultsWithDistance.filter { place ->
+                    val distance = place.distanceMeters
+                    distance == null || distance <= MAX_SEARCH_RADIUS_METERS
+                }
+                
                 // Sort by distance (nearest first), places without distance go to end
-                val sortedResults = resultsWithDistance.sortedWith(
+                val sortedResults = filteredResults.sortedWith(
                     compareBy(nullsLast()) { it.distanceMeters }
                 )
                 
@@ -372,16 +395,5 @@ class PlacesRepository(
         
         val distance = calculateDistance(userLat, userLng, placeLat, placeLng)
         return place.copy(distanceMeters = distance)
-    }
-
-    companion object {
-        @Volatile
-        private var instance: PlacesRepository? = null
-
-        fun getInstance(apiKey: String): PlacesRepository {
-            return instance ?: synchronized(this) {
-                instance ?: PlacesRepository(apiKey).also { instance = it }
-            }
-        }
     }
 }
