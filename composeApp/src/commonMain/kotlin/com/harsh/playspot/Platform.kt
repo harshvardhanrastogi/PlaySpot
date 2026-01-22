@@ -16,3 +16,10 @@ expect val isAndroid: Boolean
 
 @Composable
 expect fun SetStatusBarAppearance(isDarkTheme: Boolean)
+
+expect fun currentTimeMillis(): Long
+
+/**
+ * Generate a unique ID (UUID-like string)
+ */
+expect fun generateUniqueId(): String

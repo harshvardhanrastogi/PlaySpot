@@ -52,9 +52,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -490,11 +488,11 @@ private fun StatsSection(onViewHistoryClicked: () -> Unit) {
             )
             LabelSmall(
                 text = stringResource(Res.string.profile_stats_view_history),
-                color = MaterialTheme.colorScheme.outlineVariant,
-                fontWeight = FontWeight.Medium,
                 modifier = Modifier.clickWithFeedback(HapticFeedbackType.LongPress) {
                     onViewHistoryClicked()
-                }
+                },
+                color = MaterialTheme.colorScheme.outlineVariant,
+                fontWeight = FontWeight.Medium,
             )
         }
 
@@ -587,7 +585,7 @@ private fun StatCard(
         LabelSmall(
             text = label,
             color = MaterialTheme.colorScheme.outlineVariant,
-            fontWeight = FontWeight.Medium
+            fontWeight = FontWeight.Medium,
         )
     }
 }
@@ -1019,7 +1017,7 @@ private fun SkillLevelSection(
                             LabelSmall(
                                 text = stringResource(skillLevelState.desc),
                                 color = MaterialTheme.colorScheme.outlineVariant,
-                                fontWeight = FontWeight.Medium
+                                fontWeight = FontWeight.Medium,
                             )
                         }
 
@@ -1075,7 +1073,7 @@ private fun SkillLevelSection(
                     LabelSmall(
                         text = stringResource(selectedSkillLevelState.desc),
                         color = MaterialTheme.colorScheme.outlineVariant,
-                        fontWeight = FontWeight.Medium
+                        fontWeight = FontWeight.Medium,
                     )
                 }
             }

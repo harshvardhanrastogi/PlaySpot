@@ -3,7 +3,6 @@ package com.harsh.playspot.ui.home
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,20 +23,12 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.CalendarToday
-import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Pool
-import androidx.compose.material.icons.filled.Schedule
-import androidx.compose.material.icons.filled.SportsSoccer
-import androidx.compose.material.icons.filled.SportsTennis
 import androidx.compose.material.icons.filled.SportsScore
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -58,16 +49,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.harsh.playspot.SetStatusBarAppearance
+import com.harsh.playspot.HandleSharedEvents
 import com.harsh.playspot.dao.Event
-import com.harsh.playspot.dao.EventStatus as FirestoreEventStatus
 import com.harsh.playspot.ui.core.BodyMedium
 import com.harsh.playspot.ui.core.BodySmall
 import com.harsh.playspot.ui.core.LabelLarge
@@ -77,7 +64,6 @@ import com.harsh.playspot.ui.core.SportUi
 import com.harsh.playspot.ui.core.TitleMedium
 import com.harsh.playspot.ui.core.extendedColors
 import com.harsh.playspot.ui.core.getSportsMap
-import com.harsh.playspot.ui.core.semiCircleCornerShape
 import com.harsh.playspot.ui.events.MyEventsViewModel
 import org.jetbrains.compose.resources.stringResource
 import playspot.composeapp.generated.resources.Res
@@ -91,6 +77,7 @@ import playspot.composeapp.generated.resources.events_tab_attending
 import playspot.composeapp.generated.resources.events_tab_organizing
 import playspot.composeapp.generated.resources.events_title
 import playspot.composeapp.generated.resources.events_upcoming_matches
+import com.harsh.playspot.dao.EventStatus as FirestoreEventStatus
 
 data class SportEvent(
     val sport: SportUi,
@@ -104,23 +91,33 @@ data class SportEvent(
 )
 
 enum class EventStatus(val label: String, val color: Color, val bgColor: Color) {
-    CONFIRMED("Confirmed", Color(0xFF16A34A), Color(0xFF16A34A).copy(alpha = 0.1f)),
-    PENDING("Pending", Color(0xFF6B7280), Color(0xFF6B7280).copy(alpha = 0.1f)),
-    SOLO("Solo", Color(0xFF6B7280), Color(0xFF6B7280).copy(alpha = 0.1f))
+    CONFIRMED(
+        "Confirmed",
+        Color(0xFF16A34A),
+        Color(0xFF16A34A).copy(alpha = 0.1f)
+    ),
+    PENDING("Pending", Color(0xFF6B7280), Color(0xFF6B7280).copy(alpha = 0.1f)), SOLO(
+        "Solo",
+        Color(0xFF6B7280),
+        Color(0xFF6B7280).copy(alpha = 0.1f)
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EventsScreen(
+    openOrganizingEvents: Boolean,
     onCreateEventClick: () -> Unit = {},
     onEventClick: (String) -> Unit = {},
     viewModel: MyEventsViewModel = viewModel { MyEventsViewModel() }
 ) {
+    HandleSharedEvents(viewModel)
+
+    viewModel.setPreferredTab(openOrganizingEvents)
     val tabAttending = stringResource(Res.string.events_tab_attending)
     val tabOrganizing = stringResource(Res.string.events_tab_organizing)
-    var selectedTab by remember { mutableStateOf(tabAttending) }
-    
     val eventsUiState by viewModel.uiState.collectAsState()
+    var selectedTab by remember { mutableStateOf(if (eventsUiState.selectedTabIndex == 0) tabAttending else tabOrganizing) }
 
     val football = getSportsMap()["Football"] ?: return
     val tennis = getSportsMap()["Tennis"] ?: return
@@ -135,8 +132,7 @@ fun EventsScreen(
             status = EventStatus.CONFIRMED,
             currentPlayers = 9,
             maxPlayers = 10
-        ),
-        SportEvent(
+        ), SportEvent(
             sport = tennis,
             title = "Morning Tennis",
             location = "Green Park Courts",
@@ -144,8 +140,7 @@ fun EventsScreen(
             status = EventStatus.PENDING,
             currentPlayers = 2,
             maxPlayers = 4
-        ),
-        SportEvent(
+        ), SportEvent(
             sport = swim,
             title = "Weekly Swim",
             location = "City Pool",
@@ -158,100 +153,84 @@ fun EventsScreen(
     
     val isOrganizingTab = selectedTab == tabOrganizing
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    Scaffold(topBar = {
+        TopAppBar(
+            title = {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                // Profile avatar with online indicator
+                Box {
+                    Box(
+                        modifier = Modifier.size(40.dp).clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f))
+                            .border(
+                                width = 2.dp,
+                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
+                                shape = CircleShape
+                            ), contentAlignment = Alignment.Center
                     ) {
-                        // Profile avatar with online indicator
-                        Box {
-                            Box(
-                                modifier = Modifier
-                                    .size(40.dp)
-                                    .clip(CircleShape)
-                                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f))
-                                    .border(
-                                        width = 2.dp,
-                                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
-                                        shape = CircleShape
-                                    ),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = "AJ",
-                                    style = MaterialTheme.typography.labelLarge,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                            }
-                            // Online indicator
-                            Box(
-                                modifier = Modifier
-                                    .size(12.dp)
-                                    .align(Alignment.BottomEnd)
-                                    .offset(x = 2.dp, y = 2.dp)
-                                    .clip(CircleShape)
-                                    .background(Color(0xFF22C55E))
-                                    .border(
-                                        width = 2.dp,
-                                        color = MaterialTheme.colorScheme.background,
-                                        shape = CircleShape
-                                    )
-                            )
-                        }
-                        TitleMedium(
-                            text = stringResource(Res.string.events_title),
+                        Text(
+                            text = "AJ",
+                            style = MaterialTheme.typography.labelLarge,
                             fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.extendedColors.textDark
+                            color = MaterialTheme.colorScheme.primary
                         )
                     }
-                },
-                actions = {
-                    BadgedBox(
-                        badge = {
-                            Badge(
-                                containerColor = Color(0xFFEF4444),
-                                modifier = Modifier.size(10.dp)
+                    // Online indicator
+                    Box(
+                        modifier = Modifier.size(12.dp).align(Alignment.BottomEnd)
+                            .offset(x = 2.dp, y = 2.dp).clip(CircleShape)
+                            .background(Color(0xFF22C55E)).border(
+                                width = 2.dp,
+                                color = MaterialTheme.colorScheme.background,
+                                shape = CircleShape
                             )
-                        }
-                    ) {
-                        IconButton(onClick = { }) {
-                            Icon(
-                                imageVector = Icons.Filled.Notifications,
-                                contentDescription = stringResource(Res.string.events_notifications),
-                                tint = MaterialTheme.colorScheme.outlineVariant
-                            )
-                        }
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
-                )
-            )
-        },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = onCreateEventClick,
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = Color.White,
-                shape = CircleShape,
-                modifier = Modifier.padding(bottom = 8.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.Add,
-                    contentDescription = stringResource(Res.string.events_add_event),
-                    modifier = Modifier.size(28.dp)
+                    )
+                }
+                TitleMedium(
+                    text = stringResource(Res.string.events_title),
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.extendedColors.textDark
                 )
             }
+        }, actions = {
+            BadgedBox(
+                badge = {
+                    Badge(
+                        containerColor = Color(0xFFEF4444), modifier = Modifier.size(10.dp)
+                    )
+                }) {
+                IconButton(onClick = { }) {
+                    Icon(
+                        imageVector = Icons.Filled.Notifications,
+                        contentDescription = stringResource(Res.string.events_notifications),
+                        tint = MaterialTheme.colorScheme.outlineVariant
+                    )
+                }
+            }
+        }, colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = MaterialTheme.colorScheme.background
+        )
+        )
+    }, floatingActionButton = {
+        FloatingActionButton(
+            onClick = onCreateEventClick,
+            containerColor = MaterialTheme.colorScheme.primary,
+            contentColor = Color.White,
+            shape = CircleShape,
+            modifier = Modifier.padding(bottom = 8.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Filled.Add,
+                contentDescription = stringResource(Res.string.events_add_event),
+                modifier = Modifier.size(28.dp)
+            )
         }
-    ) { paddingValues ->
+    }) { paddingValues ->
         LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues),
+            modifier = Modifier.fillMaxSize().padding(paddingValues),
             contentPadding = PaddingValues(horizontal = Padding.padding16Dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
@@ -260,8 +239,7 @@ fun EventsScreen(
                 TabSwitcher(
                     tabs = listOf(tabAttending, tabOrganizing),
                     selectedTab = selectedTab,
-                    onTabSelected = { selectedTab = it }
-                )
+                    onTabSelected = { selectedTab = it })
             }
 
             if (isOrganizingTab) {
@@ -283,9 +261,7 @@ fun EventsScreen(
                 if (eventsUiState.isLoading && eventsUiState.organizingEvents.isEmpty()) {
                     item {
                         Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(200.dp),
+                            modifier = Modifier.fillMaxWidth().height(200.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
@@ -298,14 +274,12 @@ fun EventsScreen(
                 } else {
                     items(eventsUiState.organizingEvents) { event ->
                         OrganizedEventCard(
-                            event = event,
-                            onClick = { onEventClick(event.id) }
-                        )
+                            event = event, onClick = { onEventClick(event.id) })
                     }
                 }
             } else {
                 // Attending Tab Content - Show sample events (existing behavior)
-                
+
                 // Upcoming Matches Header
                 item {
                     Row(
@@ -357,33 +331,21 @@ fun EventsScreen(
 
 @Composable
 private fun TabSwitcher(
-    tabs: List<String>,
-    selectedTab: String,
-    onTabSelected: (String) -> Unit
+    tabs: List<String>, selectedTab: String, onTabSelected: (String) -> Unit
 ) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(48.dp)
-            .clip(RoundedCornerShape(12.dp))
-            .background(MaterialTheme.extendedColors.outline.copy(alpha = 0.3f))
-            .padding(4.dp),
+        modifier = Modifier.fillMaxWidth().height(48.dp).clip(RoundedCornerShape(12.dp))
+            .background(MaterialTheme.extendedColors.outline.copy(alpha = 0.3f)).padding(4.dp),
         horizontalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         tabs.forEach { tab ->
             val isSelected = selectedTab == tab
             Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxSize()
-                    .clip(RoundedCornerShape(8.dp))
-                    .clickable { onTabSelected(tab) }
-                    .background(
-                        if (isSelected) MaterialTheme.extendedColors.widgetBg
-                        else Color.Transparent
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
+                modifier = Modifier.weight(1f).fillMaxSize().clip(RoundedCornerShape(8.dp))
+                .clickable { onTabSelected(tab) }.background(
+                    if (isSelected) MaterialTheme.extendedColors.widgetBg
+                    else Color.Transparent
+                ), contentAlignment = Alignment.Center) {
                 LabelLarge(
                     text = tab,
                     fontWeight = FontWeight.Medium,
@@ -400,27 +362,17 @@ private fun EventCard(event: SportEvent) {
     val shape = RoundedCornerShape(12.dp)
 
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(shape)
-            .background(MaterialTheme.extendedColors.widgetBg)
-            .border(
-                width = 1.dp,
-                color = MaterialTheme.extendedColors.outline,
-                shape = shape
-            )
-            .padding(Padding.padding16Dp),
-        horizontalArrangement = Arrangement.SpaceBetween
+        modifier = Modifier.fillMaxWidth().clip(shape)
+            .background(MaterialTheme.extendedColors.widgetBg).border(
+                width = 1.dp, color = MaterialTheme.extendedColors.outline, shape = shape
+            ).padding(Padding.padding16Dp), horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Row(
-            modifier = Modifier.weight(1f),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            modifier = Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             // Sport Icon
             Box(
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(RoundedCornerShape(12.dp))
+                modifier = Modifier.size(48.dp).clip(RoundedCornerShape(12.dp))
                     .background(event.sport.color.copy(alpha = 0.1f)),
                 contentAlignment = Alignment.Center
             ) {
@@ -457,23 +409,18 @@ private fun EventCard(event: SportEvent) {
                         Row {
                             repeat(minOf(3, event.currentPlayers)) { index ->
                                 Box(
-                                    modifier = Modifier
-                                        .offset(x = (-8 * index).dp)
-                                        .size(24.dp)
-                                        .clip(CircleShape)
-                                        .background(
+                                    modifier = Modifier.offset(x = (-8 * index).dp).size(24.dp)
+                                        .clip(CircleShape).background(
                                             listOf(
                                                 Color(0xFF3B82F6),
                                                 Color(0xFFF97316),
                                                 Color(0xFF22C55E)
                                             )[index % 3]
-                                        )
-                                        .border(
+                                        ).border(
                                             width = 2.dp,
                                             color = MaterialTheme.extendedColors.widgetBg,
                                             shape = CircleShape
-                                        ),
-                                    contentAlignment = Alignment.Center
+                                        ), contentAlignment = Alignment.Center
                                 ) {
                                     Text(
                                         text = listOf("A", "B", "C")[index % 3],
@@ -487,15 +434,15 @@ private fun EventCard(event: SportEvent) {
                         if (event.currentPlayers > 3) {
                             LabelSmall(
                                 text = "+${event.currentPlayers - 3} others",
-                                color = MaterialTheme.colorScheme.outlineVariant
+                                color = MaterialTheme.colorScheme.outlineVariant,
                             )
                         }
                     }
                 } else {
                     LabelSmall(
                         text = stringResource(Res.string.events_individual_training),
+                        modifier = Modifier.padding(top = 4.dp),
                         color = MaterialTheme.colorScheme.outlineVariant,
-                        modifier = Modifier.padding(top = 4.dp)
                     )
                 }
             }
@@ -503,14 +450,11 @@ private fun EventCard(event: SportEvent) {
 
         // Right side - Status and Progress
         Column(
-            horizontalAlignment = Alignment.End,
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             // Status Badge
             Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(4.dp))
-                    .background(event.status.bgColor)
+                modifier = Modifier.clip(RoundedCornerShape(4.dp)).background(event.status.bgColor)
                     .padding(horizontal = 8.dp, vertical = 4.dp)
             ) {
                 Text(
@@ -525,19 +469,16 @@ private fun EventCard(event: SportEvent) {
             // Progress bar (only for non-solo events)
             if (event.status != EventStatus.SOLO) {
                 Column(
-                    horizontalAlignment = Alignment.End,
-                    modifier = Modifier.width(80.dp)
+                    horizontalAlignment = Alignment.End, modifier = Modifier.width(80.dp)
                 ) {
                     LabelSmall(
                         text = "${event.currentPlayers}/${event.maxPlayers}",
-                        color = MaterialTheme.colorScheme.outlineVariant
+                        color = MaterialTheme.colorScheme.outlineVariant,
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     LinearProgressIndicator(
                         progress = { event.currentPlayers.toFloat() / event.maxPlayers },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(6.dp)
+                        modifier = Modifier.fillMaxWidth().height(6.dp)
                             .clip(RoundedCornerShape(3.dp)),
                         color = event.sport.color,
                         trackColor = MaterialTheme.extendedColors.outline,
@@ -552,8 +493,7 @@ private fun EventCard(event: SportEvent) {
 @Composable
 private fun SuggestedSection() {
     val suggestions = listOf(
-        "Downtown Hoop Heads" to "2.5km away",
-        "Weekend Runners" to "5km away"
+        "Downtown Hoop Heads" to "2.5km away", "Weekend Runners" to "5km away"
     )
 
     LazyRow(
@@ -571,11 +511,7 @@ private fun SuggestedCard(title: String, distance: String) {
     val shape = RoundedCornerShape(12.dp)
 
     Box(
-        modifier = Modifier
-            .width(256.dp)
-            .height(160.dp)
-            .clip(shape)
-            .background(
+        modifier = Modifier.width(256.dp).height(160.dp).clip(shape).background(
                 brush = androidx.compose.ui.graphics.Brush.verticalGradient(
                     colors = listOf(
                         MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
@@ -586,9 +522,7 @@ private fun SuggestedCard(title: String, distance: String) {
     ) {
         // Content overlay
         Column(
-            modifier = Modifier
-                .align(Alignment.BottomStart)
-                .padding(12.dp)
+            modifier = Modifier.align(Alignment.BottomStart).padding(12.dp)
         ) {
             Text(
                 text = title,
@@ -602,21 +536,15 @@ private fun SuggestedCard(title: String, distance: String) {
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 LabelSmall(
-                    text = "📍 $distance",
-                    color = Color.White.copy(alpha = 0.8f)
+                    text = "📍 $distance", color = Color.White.copy(alpha = 0.8f),
                 )
             }
         }
 
         // Add button
         Box(
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(12.dp)
-                .size(32.dp)
-                .clip(CircleShape)
-                .background(Color.White.copy(alpha = 0.2f)),
-            contentAlignment = Alignment.Center
+            modifier = Modifier.align(Alignment.TopEnd).padding(12.dp).size(32.dp).clip(CircleShape)
+                .background(Color.White.copy(alpha = 0.2f)), contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = Icons.Filled.Add,
@@ -630,8 +558,7 @@ private fun SuggestedCard(title: String, distance: String) {
 
 @Composable
 private fun OrganizedEventCard(
-    event: Event,
-    onClick: () -> Unit
+    event: Event, onClick: () -> Unit
 ) {
     val shape = RoundedCornerShape(12.dp)
     val statusColor = when (event.status) {
@@ -653,32 +580,19 @@ private fun OrganizedEventCard(
     val sportUi = sportsMap[event.sportType]
 
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(shape)
-            .background(MaterialTheme.extendedColors.widgetBg)
-            .border(
-                width = 1.dp,
-                color = MaterialTheme.extendedColors.outline,
-                shape = shape
-            )
-            .clickable { onClick() }
-            .padding(Padding.padding16Dp),
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
+        modifier = Modifier.fillMaxWidth().clip(shape)
+        .background(MaterialTheme.extendedColors.widgetBg).border(
+            width = 1.dp, color = MaterialTheme.extendedColors.outline, shape = shape
+        ).clickable { onClick() }.padding(Padding.padding16Dp),
+        horizontalArrangement = Arrangement.SpaceBetween) {
         Row(
-            modifier = Modifier.weight(1f),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            modifier = Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             // Sport Icon
             Box(
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(
+                modifier = Modifier.size(48.dp).clip(RoundedCornerShape(12.dp)).background(
                         (sportUi?.color ?: MaterialTheme.colorScheme.primary).copy(alpha = 0.1f)
-                    ),
-                contentAlignment = Alignment.Center
+                    ), contentAlignment = Alignment.Center
             ) {
                 if (sportUi != null) {
                     Icon(
@@ -732,24 +646,18 @@ private fun OrganizedEventCard(
                         // Avatar stack
                         Row {
                             val avatarColors = listOf(
-                                Color(0xFF3B82F6),
-                                Color(0xFFF97316),
-                                Color(0xFF22C55E)
+                                Color(0xFF3B82F6), Color(0xFFF97316), Color(0xFF22C55E)
                             )
                             val avatarLabels = listOf("A", "B", "C")
                             repeat(minOf(3, event.currentPlayers)) { index ->
                                 Box(
-                                    modifier = Modifier
-                                        .offset(x = (-8 * index).dp)
-                                        .size(24.dp)
-                                        .clip(CircleShape)
-                                        .background(avatarColors[index % 3])
+                                    modifier = Modifier.offset(x = (-8 * index).dp).size(24.dp)
+                                        .clip(CircleShape).background(avatarColors[index % 3])
                                         .border(
                                             width = 2.dp,
                                             color = MaterialTheme.extendedColors.widgetBg,
                                             shape = CircleShape
-                                        ),
-                                    contentAlignment = Alignment.Center
+                                        ), contentAlignment = Alignment.Center
                                 ) {
                                     Text(
                                         text = avatarLabels[index % 3],
@@ -763,15 +671,15 @@ private fun OrganizedEventCard(
                         if (event.currentPlayers > 3) {
                             LabelSmall(
                                 text = "+${event.currentPlayers - 3} others",
-                                color = MaterialTheme.colorScheme.outlineVariant
+                                color = MaterialTheme.colorScheme.outlineVariant,
                             )
                         }
                     }
                 } else {
                     LabelSmall(
                         text = "Individual training",
+                        modifier = Modifier.padding(top = 4.dp),
                         color = MaterialTheme.colorScheme.outlineVariant,
-                        modifier = Modifier.padding(top = 4.dp)
                     )
                 }
             }
@@ -779,13 +687,11 @@ private fun OrganizedEventCard(
 
         // Right side - Status and Progress
         Column(
-            horizontalAlignment = Alignment.End,
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             // Status Badge
             Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(4.dp))
+                modifier = Modifier.clip(RoundedCornerShape(4.dp))
                     .background(statusColor.copy(alpha = 0.1f))
                     .padding(horizontal = 8.dp, vertical = 4.dp)
             ) {
@@ -801,19 +707,16 @@ private fun OrganizedEventCard(
             // Progress bar (only for multi-player events)
             if (event.playerLimit > 1) {
                 Column(
-                    horizontalAlignment = Alignment.End,
-                    modifier = Modifier.width(80.dp)
+                    horizontalAlignment = Alignment.End, modifier = Modifier.width(80.dp)
                 ) {
                     LabelSmall(
                         text = "${event.currentPlayers}/${event.playerLimit}",
-                        color = MaterialTheme.colorScheme.outlineVariant
+                        color = MaterialTheme.colorScheme.outlineVariant,
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     LinearProgressIndicator(
                         progress = { event.currentPlayers.toFloat() / event.playerLimit },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(6.dp)
+                        modifier = Modifier.fillMaxWidth().height(6.dp)
                             .clip(RoundedCornerShape(3.dp)),
                         color = sportUi?.color ?: MaterialTheme.colorScheme.primary,
                         trackColor = MaterialTheme.extendedColors.outline,
@@ -825,8 +728,7 @@ private fun OrganizedEventCard(
             // Skill level badge
             if (event.skillLevel.isNotBlank()) {
                 Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(4.dp))
+                    modifier = Modifier.clip(RoundedCornerShape(4.dp))
                         .background(MaterialTheme.extendedColors.outline)
                         .padding(horizontal = 6.dp, vertical = 2.dp)
                 ) {
@@ -847,16 +749,12 @@ private fun EmptyOrganizingSection(
     onCreateEventClick: () -> Unit
 ) {
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 48.dp),
+        modifier = Modifier.fillMaxWidth().padding(vertical = 48.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         Box(
-            modifier = Modifier
-                .size(80.dp)
-                .clip(CircleShape)
+            modifier = Modifier.size(80.dp).clip(CircleShape)
                 .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
             contentAlignment = Alignment.Center
         ) {
@@ -880,12 +778,9 @@ private fun EmptyOrganizingSection(
         )
 
         Box(
-            modifier = Modifier
-                .clip(RoundedCornerShape(12.dp))
-                .background(MaterialTheme.colorScheme.primary)
-                .clickable { onCreateEventClick() }
-                .padding(horizontal = 24.dp, vertical = 12.dp)
-        ) {
+            modifier = Modifier.clip(RoundedCornerShape(12.dp))
+            .background(MaterialTheme.colorScheme.primary).clickable { onCreateEventClick() }
+            .padding(horizontal = 24.dp, vertical = 12.dp)) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -897,9 +792,7 @@ private fun EmptyOrganizingSection(
                     modifier = Modifier.size(20.dp)
                 )
                 LabelLarge(
-                    text = "Create Event",
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
+                    text = "Create Event", fontWeight = FontWeight.Bold, color = Color.White
                 )
             }
         }

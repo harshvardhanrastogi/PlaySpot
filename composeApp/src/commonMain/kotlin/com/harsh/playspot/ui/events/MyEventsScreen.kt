@@ -71,6 +71,7 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 
 @Composable
 fun MyEventsScreenRoute(
+    openOrganizingEvents: Boolean,
     onBackPressed: () -> Unit,
     onCreateEventClick: () -> Unit,
     onEventClick: (String) -> Unit = {},
@@ -79,6 +80,7 @@ fun MyEventsScreenRoute(
     SetStatusBarAppearance(isDarkTheme = isSystemInDarkTheme())
     val uiState by viewModel.uiState.collectAsState()
     val tabs = listOf("Organizing", "Participating")
+    viewModel.setPreferredTab(openOrganizingEvents)
     MyEventsScreen(
         tabs,
         onBackPressed,
@@ -212,25 +214,35 @@ private fun OrganizingTabContent(
     onEventClick: (String) -> Unit,
     onCreateEventClick: () -> Unit
 ) {
+    // ONLY show centered loader if we have NO data and aren't using the pull-indicator
     if (isLoading && events.isEmpty()) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator()
         }
-    } else if (errorMessage != null && events.isEmpty()) {
-        EmptyStateMessage(
-            message = errorMessage,
-            isError = true
-        )
-    } else if (events.isEmpty()) {
-        EmptyOrganizingState(onCreateEventClick = onCreateEventClick)
     } else {
-        EventsList(
-            events = events,
-            onEventClick = onEventClick
-        )
+        // ALWAYS use a scrollable surface here so PullToRefresh works
+        LazyColumn(modifier = Modifier.fillMaxSize()) {
+            if (events.isEmpty()) {
+                item {
+                    // fillParentMaxSize() is CRITICAL here.
+                    // It makes the empty area scrollable/pullable.
+                    Box(
+                        modifier = Modifier.fillParentMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (errorMessage != null) {
+                            EmptyStateMessage(message = errorMessage, isError = true)
+                        } else {
+                            EmptyOrganizingState(onCreateEventClick = onCreateEventClick)
+                        }
+                    }
+                }
+            } else {
+                items(events) { event ->
+                    EventCard(event = event, onClick = { onEventClick(event.id) })
+                }
+            }
+        }
     }
 }
 
@@ -241,29 +253,44 @@ private fun ParticipatingTabContent(
     errorMessage: String?,
     onEventClick: (String) -> Unit
 ) {
-    if (isLoading && events.isEmpty()) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+
+    LazyColumn(modifier = Modifier.fillMaxSize()) {
+        if (events.isEmpty()) {
+            item {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                }
+            }
+        } else if (events.isEmpty()) {
+            item {
+                Box(
+                    modifier = Modifier.fillParentMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    val message = errorMessage
+                        ?: "You haven't joined any events yet.\nExplore and join events to see them here!"
+                    EmptyStateMessage(
+                        message = message,
+                        isError = errorMessage != null
+                    )
+                }
+            }
+        } else {
+            items(events) { event ->
+                EventCard(
+                    event = event,
+                    onClick = { onEventClick(event.id) }
+                )
+            }
+            item {
+                Spacer(modifier = Modifier.height(80.dp))
+            }
         }
-    } else if (errorMessage != null && events.isEmpty()) {
-        EmptyStateMessage(
-            message = errorMessage,
-            isError = true
-        )
-    } else if (events.isEmpty()) {
-        EmptyStateMessage(
-            message = "You haven't joined any events yet.\nExplore and join events to see them here!",
-            isError = false
-        )
-    } else {
-        EventsList(
-            events = events,
-            onEventClick = onEventClick
-        )
     }
+
 }
 
 @Composable
@@ -425,15 +452,15 @@ private fun EventCard(
                         if (event.currentPlayers > 3) {
                             LabelSmall(
                                 text = "+${event.currentPlayers - 3} others",
-                                color = MaterialTheme.colorScheme.outlineVariant
+                                color = MaterialTheme.colorScheme.outlineVariant,
                             )
                         }
                     }
                 } else {
                     LabelSmall(
                         text = "Individual training",
+                        modifier = Modifier.padding(top = 4.dp),
                         color = MaterialTheme.colorScheme.outlineVariant,
-                        modifier = Modifier.padding(top = 4.dp)
                     )
                 }
             }
@@ -468,7 +495,7 @@ private fun EventCard(
                 ) {
                     LabelSmall(
                         text = "${event.currentPlayers}/${event.playerLimit}",
-                        color = MaterialTheme.colorScheme.outlineVariant
+                        color = MaterialTheme.colorScheme.outlineVariant,
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     LinearProgressIndicator(

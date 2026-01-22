@@ -70,6 +70,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.harsh.playspot.SharedEvent
+import com.harsh.playspot.SharedEventHandler
 import com.harsh.playspot.ui.core.AppTheme
 import com.harsh.playspot.ui.core.BodyMedium
 import com.harsh.playspot.ui.core.BodySmall
@@ -95,12 +97,16 @@ import playspot.composeapp.generated.resources.skateboarder
 fun CreateEventScreenRoute(
     onBackPressed: () -> Unit,
     onEventCreated: () -> Unit,
-    viewModel: CreateEventViewModel = viewModel { CreateEventViewModel() }
+    eventId: String? = null,
+    viewModel: CreateEventViewModel = viewModel(key = eventId ?: "create") { 
+        CreateEventViewModel(eventIdToEdit = eventId) 
+    }
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     var showLocationSelection by remember { mutableStateOf(false) }
+    var showDeleteConfirmation by remember { mutableStateOf(false) }
 
     // Image picker launcher
     val imagePickerLauncher = rememberImagePickerLauncher(
@@ -116,11 +122,33 @@ fun CreateEventScreenRoute(
     LaunchedEffect(Unit) {
         viewModel.events.collectLatest { event ->
             when (event) {
-                is CreateEventEvent.CreateSuccess -> onEventCreated()
+                is CreateEventEvent.CreateSuccess -> {
+                    onEventCreated()
+                    SharedEventHandler.sendEvent(SharedEvent.EventCreated)
+                }
+                is CreateEventEvent.UpdateSuccess -> {
+                    onEventCreated()
+                    SharedEventHandler.sendEvent(SharedEvent.EventCreated)
+                }
+                is CreateEventEvent.DeleteSuccess -> {
+                    onEventCreated()
+                    SharedEventHandler.sendEvent(SharedEvent.EventCreated)
+                }
                 is CreateEventEvent.CreateError -> snackbarHostState.showSnackbar(event.message)
                 is CreateEventEvent.SaveDraftSuccess -> snackbarHostState.showSnackbar("Draft saved")
             }
         }
+    }
+
+    // Delete confirmation dialog
+    if (showDeleteConfirmation) {
+        DeleteConfirmationDialog(
+            onConfirm = {
+                showDeleteConfirmation = false
+                viewModel.deleteEvent()
+            },
+            onDismiss = { showDeleteConfirmation = false }
+        )
     }
 
     if (showLocationSelection) {
@@ -153,7 +181,8 @@ fun CreateEventScreenRoute(
             onMeetingPointChange = viewModel::onMeetingPointChange,
             onDescriptionChange = viewModel::onDescriptionChange,
             onSkillLevelChange = viewModel::onSkillLevelChange,
-            onCreateMatchClick = viewModel::createMatch
+            onCreateMatchClick = if (uiState.isEditMode) viewModel::updateEvent else viewModel::createMatch,
+            onDeleteClick = { showDeleteConfirmation = true }
         )
     }
 }
@@ -175,7 +204,8 @@ private fun CreateEventScreen(
     onMeetingPointChange: (String) -> Unit,
     onDescriptionChange: (String) -> Unit,
     onSkillLevelChange: (SkillLevel) -> Unit,
-    onCreateMatchClick: () -> Unit
+    onCreateMatchClick: () -> Unit,
+    onDeleteClick: () -> Unit = {}
 ) {
     val scrollState = rememberScrollState()
 
@@ -185,7 +215,7 @@ private fun CreateEventScreen(
                 TopAppBar(
                     title = {
                         TitleMedium(
-                            text = "Create Match",
+                            text = if (uiState.isEditMode) "Edit Match" else "Create Match",
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.extendedColors.textDark
                         )
@@ -201,14 +231,25 @@ private fun CreateEventScreen(
                         )
                     },
                     actions = {
-                        Text(
-                            text = "Save Draft",
-                            modifier = Modifier
-                                .clickable { onSaveDraftClick() }
-                                .padding(horizontal = 16.dp),
-                            color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.Bold
-                        )
+                        if (uiState.isEditMode) {
+                            Text(
+                                text = if (uiState.isDeleting) "Deleting..." else "Delete",
+                                modifier = Modifier
+                                    .clickable(enabled = !uiState.isDeleting) { onDeleteClick() }
+                                    .padding(horizontal = 16.dp),
+                                color = Color(0xFFEF4444),
+                                fontWeight = FontWeight.Bold
+                            )
+                        } else {
+                            Text(
+                                text = "Save Draft",
+                                modifier = Modifier
+                                    .clickable { onSaveDraftClick() }
+                                    .padding(horizontal = 16.dp),
+                                color = MaterialTheme.colorScheme.primary,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(
                         containerColor = MaterialTheme.extendedColors.widgetBg
@@ -226,7 +267,7 @@ private fun CreateEventScreen(
                 ) {
                     LargeButton(
                         modifier = Modifier.fillMaxWidth(),
-                        label = "Create Match",
+                        label = if (uiState.isEditMode) "Update Match" else "Create Match",
                         isLoading = uiState.isLoading,
                         onClick = onCreateMatchClick
                     )
@@ -1046,6 +1087,71 @@ private fun SkillLevelSelector(
     }
 }
 
+@Composable
+private fun DeleteConfirmationDialog(
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss) {
+        Column(
+            modifier = Modifier
+                .clip(RoundedCornerShape(28.dp))
+                .background(MaterialTheme.colorScheme.surface)
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            TitleMedium(
+                text = "Delete Event",
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.extendedColors.textDark
+            )
+            
+            BodyMedium(
+                text = "Are you sure you want to delete this event? This action cannot be undone.",
+                color = MaterialTheme.colorScheme.outlineVariant
+            )
+            
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(MaterialTheme.extendedColors.outline)
+                        .clickable { onDismiss() }
+                        .padding(vertical = 12.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    LabelLarge(
+                        text = "Cancel",
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.extendedColors.textDark
+                    )
+                }
+                
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(Color(0xFFEF4444))
+                        .clickable { onConfirm() }
+                        .padding(vertical = 12.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    LabelLarge(
+                        text = "Delete",
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                }
+            }
+        }
+    }
+}
+
 private fun formatDateFromMillis(millis: Long): String {
     val months = listOf("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
     // Calculate date components from milliseconds
@@ -1095,7 +1201,8 @@ fun CreateEventScreenPreview() {
         onMeetingPointChange = {},
         onDescriptionChange = {},
         onSkillLevelChange = {},
-        onCreateMatchClick = {}
+        onCreateMatchClick = {},
+        onDeleteClick = {}
     )
 }
 

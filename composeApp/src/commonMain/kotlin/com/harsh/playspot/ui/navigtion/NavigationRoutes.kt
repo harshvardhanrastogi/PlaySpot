@@ -3,11 +3,13 @@ package com.harsh.playspot.ui.navigtion
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.harsh.playspot.ui.events.CreateEventScreenRoute
-import com.harsh.playspot.ui.events.MyEventsScreen
 import com.harsh.playspot.ui.events.MyEventsScreenRoute
 import com.harsh.playspot.ui.home.HomeScreenRoute
 import com.harsh.playspot.ui.login.LoginScreenRoute
@@ -64,8 +66,8 @@ fun NavigationRoutes(hasUserSession: Boolean, onBackPressed: () -> Unit) {
         composable(route = "Route.SportPreference") {
             PreferenceSetupRoute(
                 onBackPressed = { navController.popBackStack() },
-                onContinueClicked = { 
-                    navController.navigate("Route.SportPreferenceComplete") 
+                onContinueClicked = {
+                    navController.navigate("Route.SportPreferenceComplete")
                 }
             )
         }
@@ -74,8 +76,8 @@ fun NavigationRoutes(hasUserSession: Boolean, onBackPressed: () -> Unit) {
             PreferenceSetupCompleteRoute(
                 onBackPressed = { navController.popBackStack() },
                 onDiscoverClicked = { navController.navigate("Route.Home") },
-                onCompleteProfileClicked = { 
-                    navController.navigate("Route.FinishProfile") 
+                onCompleteProfileClicked = {
+                    navController.navigate("Route.FinishProfile")
                 }
             )
         }
@@ -96,8 +98,18 @@ fun NavigationRoutes(hasUserSession: Boolean, onBackPressed: () -> Unit) {
             )
         }
 
-        composable("Route.Home") {
+        composable("Route.Home") { backStackEntry ->
+            val openOrganizingEvents by backStackEntry.savedStateHandle.getStateFlow(
+                "openOrganizing",
+                false
+            ).collectAsState()
+            LaunchedEffect(openOrganizingEvents) {
+                if (openOrganizingEvents) {
+                    backStackEntry.savedStateHandle["openOrganizing"] = false
+                }
+            }
             HomeScreenRoute(
+                openOrganizingEvents = openOrganizingEvents,
                 onLogoutSuccess = {
                     navController.navigate("Route.Login") {
                         popUpTo("Route.Login") { inclusive = true }
@@ -111,10 +123,13 @@ fun NavigationRoutes(hasUserSession: Boolean, onBackPressed: () -> Unit) {
                 },
                 onEditPictureClicked = {
                     navController.navigate("Route.EditProfilePicture")
+                },
+                onEventClick = { eventId ->
+                    navController.navigate("Route.EditEvent/$eventId")
                 }
             )
         }
-        
+
         composable("Route.EditProfilePicture") {
             AddProfilePictureScreenRoute(
                 onBackPressed = { navController.popBackStack() },
@@ -133,12 +148,35 @@ fun NavigationRoutes(hasUserSession: Boolean, onBackPressed: () -> Unit) {
         composable("Route.CreateEvent") {
             CreateEventScreenRoute(
                 onBackPressed = { navController.popBackStack() },
-                onEventCreated = { navController.popBackStack() }
+                onEventCreated = {
+                    navController.previousBackStackEntry?.savedStateHandle?.set(
+                        "openOrganizing",
+                        true
+                    )
+                    navController.popBackStack()
+                }
             )
         }
 
-        composable("Route.MyEvents") {
+        composable("Route.EditEvent/{eventId}") { backStackEntry ->
+            val eventId = backStackEntry.arguments?.getString("eventId") ?: ""
+            CreateEventScreenRoute(
+                onBackPressed = { navController.popBackStack() },
+                onEventCreated = {
+                    navController.previousBackStackEntry?.savedStateHandle?.set(
+                        "openOrganizing",
+                        true
+                    )
+                    navController.popBackStack()
+                },
+                eventId = eventId
+            )
+        }
+
+        composable("Route.MyEvents") { backStackEntry ->
+
             MyEventsScreenRoute(
+                openOrganizingEvents = true,
                 onBackPressed = { navController.popBackStack() },
                 onCreateEventClick = { navController.navigate("Route.CreateEvent") },
                 onEventClick = { eventId ->

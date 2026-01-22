@@ -2,6 +2,8 @@ package com.harsh.playspot.ui.events
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.harsh.playspot.currentTimeMillis
+import com.harsh.playspot.generateUniqueId
 import com.harsh.playspot.dao.Event
 import com.harsh.playspot.dao.EventStatus
 import com.harsh.playspot.dao.Venue
@@ -38,7 +40,11 @@ data class CreateEventUiState(
     val matchNameError: String? = null,
     val sportTypeError: String? = null,
     val dateError: String? = null,
-    val locationError: String? = null
+    val locationError: String? = null,
+    // Edit mode fields
+    val isEditMode: Boolean = false,
+    val eventId: String = "",
+    val isDeleting: Boolean = false
 ) {
     // For backward compatibility
     val location: String get() = venueName
@@ -69,7 +75,10 @@ data class CreateEventUiState(
                 matchNameError == other.matchNameError &&
                 sportTypeError == other.sportTypeError &&
                 dateError == other.dateError &&
-                locationError == other.locationError
+                locationError == other.locationError &&
+                isEditMode == other.isEditMode &&
+                eventId == other.eventId &&
+                isDeleting == other.isDeleting
     }
 
     override fun hashCode(): Int {
@@ -92,17 +101,23 @@ data class CreateEventUiState(
         result = 31 * result + (sportTypeError?.hashCode() ?: 0)
         result = 31 * result + (dateError?.hashCode() ?: 0)
         result = 31 * result + (locationError?.hashCode() ?: 0)
+        result = 31 * result + isEditMode.hashCode()
+        result = 31 * result + eventId.hashCode()
+        result = 31 * result + isDeleting.hashCode()
         return result
     }
 }
 
 sealed class CreateEventEvent {
     data object CreateSuccess : CreateEventEvent()
+    data object UpdateSuccess : CreateEventEvent()
+    data object DeleteSuccess : CreateEventEvent()
     data class CreateError(val message: String) : CreateEventEvent()
     data object SaveDraftSuccess : CreateEventEvent()
 }
 
 class CreateEventViewModel(
+    private val eventIdToEdit: String? = null,
     private val firestoreRepository: FirestoreRepository = FirestoreRepository.instance,
     private val authRepository: AuthRepository = AuthRepository.getInstance()
 ) : ViewModel() {
@@ -112,6 +127,61 @@ class CreateEventViewModel(
 
     private val _events = MutableSharedFlow<CreateEventEvent>()
     val events: SharedFlow<CreateEventEvent> = _events.asSharedFlow()
+
+    init {
+        // Load event if editing
+        if (!eventIdToEdit.isNullOrBlank()) {
+            loadEvent(eventIdToEdit)
+        }
+    }
+
+    /**
+     * Load an existing event for editing
+     */
+    fun loadEvent(eventId: String) {
+        if (eventId.isBlank()) return
+        
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, isEditMode = true, eventId = eventId) }
+            
+            firestoreRepository.getDocument<Event>(CollectionNames.EVENTS, eventId)
+                .onSuccess { event ->
+                    if (event != null) {
+                        val skillLevel = try {
+                            SkillLevel.valueOf(event.skillLevel)
+                        } catch (e: Exception) {
+                            SkillLevel.Beginner
+                        }
+                        
+                        _uiState.update {
+                            it.copy(
+                                isLoading = false,
+                                matchName = event.matchName,
+                                sportType = event.sportType,
+                                date = event.date,
+                                time = event.time,
+                                playerLimit = if (event.playerLimit > 0) event.playerLimit.toString() else "",
+                                venueName = event.venue.name,
+                                venueAddress = event.venue.address,
+                                venuePlaceId = event.venue.placeId,
+                                venueLatitude = if (event.venue.latitude != 0.0) event.venue.latitude else null,
+                                venueLongitude = if (event.venue.longitude != 0.0) event.venue.longitude else null,
+                                meetingPoint = event.venue.meetingPoint,
+                                description = event.description,
+                                skillLevel = skillLevel
+                            )
+                        }
+                    } else {
+                        _uiState.update { it.copy(isLoading = false) }
+                        _events.emit(CreateEventEvent.CreateError("Event not found"))
+                    }
+                }
+                .onFailure { e ->
+                    _uiState.update { it.copy(isLoading = false) }
+                    _events.emit(CreateEventEvent.CreateError(e.message ?: "Failed to load event"))
+                }
+        }
+    }
 
     fun onCoverImageSelected(bytes: ByteArray) {
         _uiState.update { it.copy(coverImageBytes = bytes) }
@@ -180,7 +250,7 @@ class CreateEventViewModel(
                 val currentUser = authRepository.currentUser
                 val event = createEventFromState(currentState, currentUser?.uid ?: "", EventStatus.DRAFT)
                 
-                firestoreRepository.addDocument(CollectionNames.EVENTS, event)
+                firestoreRepository.setDocument(CollectionNames.EVENTS, event.id, event)
                     .onSuccess {
                         _uiState.update { it.copy(isLoading = false) }
                         _events.emit(CreateEventEvent.SaveDraftSuccess)
@@ -251,8 +321,8 @@ class CreateEventViewModel(
                 
                 val event = createEventFromState(currentState, currentUser.uid, EventStatus.UPCOMING)
                 
-                firestoreRepository.addDocument(CollectionNames.EVENTS, event)
-                    .onSuccess { eventId ->
+                firestoreRepository.setDocument(CollectionNames.EVENTS, event.id, event)
+                    .onSuccess {
                         _uiState.update { it.copy(isLoading = false) }
                         _events.emit(CreateEventEvent.CreateSuccess)
                     }
@@ -267,14 +337,140 @@ class CreateEventViewModel(
         }
     }
     
+    /**
+     * Update an existing event
+     */
+    fun updateEvent() {
+        val currentState = _uiState.value
+        
+        if (!currentState.isEditMode || currentState.eventId.isBlank()) {
+            viewModelScope.launch {
+                _events.emit(CreateEventEvent.CreateError("Cannot update: not in edit mode"))
+            }
+            return
+        }
+
+        // Validate inputs
+        var hasError = false
+        var matchNameError: String? = null
+        var sportTypeError: String? = null
+        var dateError: String? = null
+        var locationError: String? = null
+
+        if (currentState.matchName.isBlank()) {
+            matchNameError = "Match name is required"
+            hasError = true
+        }
+
+        if (currentState.sportType.isBlank()) {
+            sportTypeError = "Please select a sport"
+            hasError = true
+        }
+
+        if (currentState.date.isBlank()) {
+            dateError = "Date is required"
+            hasError = true
+        }
+        
+        if (currentState.venueName.isBlank()) {
+            locationError = "Please select a venue"
+            hasError = true
+        }
+
+        if (hasError) {
+            _uiState.update {
+                it.copy(
+                    matchNameError = matchNameError,
+                    sportTypeError = sportTypeError,
+                    dateError = dateError,
+                    locationError = locationError
+                )
+            }
+            return
+        }
+
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true) }
+
+            try {
+                val updates = mapOf(
+                    "matchName" to currentState.matchName.trim(),
+                    "sportType" to currentState.sportType,
+                    "date" to currentState.date,
+                    "time" to currentState.time,
+                    "playerLimit" to (currentState.playerLimit.toIntOrNull() ?: 0),
+                    "description" to currentState.description.trim(),
+                    "skillLevel" to currentState.skillLevel.name,
+                    "venue" to mapOf(
+                        "name" to currentState.venueName,
+                        "address" to currentState.venueAddress,
+                        "meetingPoint" to currentState.meetingPoint.trim(),
+                        "latitude" to (currentState.venueLatitude ?: 0.0),
+                        "longitude" to (currentState.venueLongitude ?: 0.0),
+                        "placeId" to currentState.venuePlaceId
+                    ),
+                    "updatedAt" to currentTimeMillis()
+                )
+                
+                firestoreRepository.updateDocument(CollectionNames.EVENTS, currentState.eventId, updates)
+                    .onSuccess {
+                        _uiState.update { it.copy(isLoading = false) }
+                        _events.emit(CreateEventEvent.UpdateSuccess)
+                    }
+                    .onFailure { e ->
+                        _uiState.update { it.copy(isLoading = false) }
+                        _events.emit(CreateEventEvent.CreateError(e.message ?: "Failed to update event"))
+                    }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(isLoading = false) }
+                _events.emit(CreateEventEvent.CreateError(e.message ?: "Failed to update event"))
+            }
+        }
+    }
+
+    /**
+     * Delete an event
+     */
+    fun deleteEvent() {
+        val currentState = _uiState.value
+        
+        if (!currentState.isEditMode || currentState.eventId.isBlank()) {
+            viewModelScope.launch {
+                _events.emit(CreateEventEvent.CreateError("Cannot delete: not in edit mode"))
+            }
+            return
+        }
+
+        viewModelScope.launch {
+            _uiState.update { it.copy(isDeleting = true) }
+
+            try {
+                firestoreRepository.deleteDocument(CollectionNames.EVENTS, currentState.eventId)
+                    .onSuccess {
+                        _uiState.update { it.copy(isDeleting = false) }
+                        _events.emit(CreateEventEvent.DeleteSuccess)
+                    }
+                    .onFailure { e ->
+                        _uiState.update { it.copy(isDeleting = false) }
+                        _events.emit(CreateEventEvent.CreateError(e.message ?: "Failed to delete event"))
+                    }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(isDeleting = false) }
+                _events.emit(CreateEventEvent.CreateError(e.message ?: "Failed to delete event"))
+            }
+        }
+    }
+
     private fun createEventFromState(
         state: CreateEventUiState,
         creatorId: String,
-        status: String
+        status: String,
+        eventId: String = generateUniqueId()
     ): Event {
-        val currentTimeMillis = System.currentTimeMillis()
+        val currentTimeMillis = currentTimeMillis()
         
         return Event(
+            id = eventId,
             matchName = state.matchName.trim(),
             sportType = state.sportType,
             date = state.date,

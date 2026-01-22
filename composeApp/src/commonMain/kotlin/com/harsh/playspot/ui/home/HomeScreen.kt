@@ -1,17 +1,13 @@
 package com.harsh.playspot.ui.home
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Groups
@@ -34,9 +30,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
@@ -55,10 +49,12 @@ data class BottomNavItem(
 
 @Composable
 fun HomeScreenRoute(
+    openOrganizingEvents: Boolean,
     onLogoutSuccess: () -> Unit = {},
     onAddSportClicked: () -> Unit = {},
     onCreateEventClicked: () -> Unit = {},
-    onEditPictureClicked: () -> Unit = {}
+    onEditPictureClicked: () -> Unit = {},
+    onEventClick: (String) -> Unit = {}
 ) {
     SetStatusBarAppearance(isDarkTheme = isSystemInDarkTheme())
 
@@ -123,7 +119,12 @@ fun HomeScreenRoute(
                     .padding(bottom = paddingValues.calculateBottomPadding())
             ) {
                 when (selectedTabIndex) {
-                    0 -> EventsScreen(onCreateEventClick = onCreateEventClicked)
+                    0 -> EventsScreen(
+                        openOrganizingEvents = openOrganizingEvents,
+                        onCreateEventClick = onCreateEventClicked,
+                        onEventClick = onEventClick
+                    )
+
                     1 -> ExploreScreen()
                     2 -> GroupsScreen()
                     3 -> ProfileScreenRoute(

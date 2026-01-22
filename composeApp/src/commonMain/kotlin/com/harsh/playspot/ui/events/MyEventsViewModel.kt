@@ -20,10 +20,15 @@ data class MyEventsUiState(
     val selectedTabIndex: Int = 0
 )
 
+interface EventManager {
+    fun fetchEvents()
+    fun refreshEvents()
+}
+
 class MyEventsViewModel(
     private val firestoreRepository: FirestoreRepository = FirestoreRepository.instance,
     private val authRepository: AuthRepository = AuthRepository.getInstance()
-) : ViewModel() {
+) : ViewModel(), EventManager {
 
     private val _uiState = MutableStateFlow(MyEventsUiState())
     val uiState: StateFlow<MyEventsUiState> = _uiState.asStateFlow()
@@ -36,11 +41,11 @@ class MyEventsViewModel(
         _uiState.update { it.copy(selectedTabIndex = index) }
     }
 
-    fun refreshEvents() {
+    override fun refreshEvents() {
         fetchEvents()
     }
 
-    private fun fetchEvents() {
+    override fun fetchEvents() {
         val currentUser = authRepository.currentUser
         if (currentUser == null) {
             _uiState.update { it.copy(errorMessage = "Please login to view your events") }
@@ -62,19 +67,19 @@ class MyEventsViewModel(
                     .onSuccess { events ->
                         // Sort by date (newest first)
                         val sortedEvents = events.sortedByDescending { it.createdAt }
-                        _uiState.update { 
+                        _uiState.update {
                             it.copy(
                                 organizingEvents = sortedEvents,
                                 isLoading = false
-                            ) 
+                            )
                         }
                     }
                     .onFailure { e ->
-                        _uiState.update { 
+                        _uiState.update {
                             it.copy(
                                 isLoading = false,
                                 errorMessage = e.message ?: "Failed to fetch events"
-                            ) 
+                            )
                         }
                     }
 
@@ -82,13 +87,19 @@ class MyEventsViewModel(
                 // This would require a different query approach since participants is an array
 
             } catch (e: Exception) {
-                _uiState.update { 
+                _uiState.update {
                     it.copy(
                         isLoading = false,
                         errorMessage = e.message ?: "Failed to fetch events"
-                    ) 
+                    )
                 }
             }
+        }
+    }
+
+    fun setPreferredTab(openOrganizingEvents: Boolean) {
+        _uiState.update {
+            it.copy(selectedTabIndex = if (openOrganizingEvents) 1 else 0)
         }
     }
 }

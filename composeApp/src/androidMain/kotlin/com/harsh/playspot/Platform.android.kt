@@ -7,6 +7,7 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
+import kotlinx.io.files.SystemFileSystem
 
 class AndroidPlatform : Platform {
     override val name: String = "Android ${Build.VERSION.SDK_INT}"
@@ -29,4 +30,12 @@ actual fun SetStatusBarAppearance(isDarkTheme: Boolean) {
             WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !isDarkTheme
         }
     }
+}
+
+actual fun currentTimeMillis(): Long {
+    return System.currentTimeMillis()
+}
+
+actual fun generateUniqueId(): String {
+    return java.util.UUID.randomUUID().toString()
 }

@@ -82,6 +82,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import com.harsh.playspot.ui.signup.SportChipState
 import org.jetbrains.compose.resources.stringResource
@@ -280,7 +281,7 @@ fun TextField(
             visualTransformation = visualTransformation,
             shape = shape,
             supportingText = if (errorText != null) {
-                { LabelSmall(text = errorText, color = MaterialTheme.colorScheme.error) }
+                { LabelSmall(text = errorText, color = MaterialTheme.colorScheme.error,) }
             } else null
         )
     }
@@ -359,7 +360,8 @@ fun Text2(
     style: Text2StyleToken = Text2StyleToken.BodyMedium,
     color: Color = Color.Unspecified,
     fontWeight: FontWeight = FontWeight.Normal,
-    textAlign: TextAlign = TextAlign.Unspecified
+    textAlign: TextAlign = TextAlign.Unspecified,
+    fontSize: TextUnit = TextUnit.Unspecified,
 ) {
     Text(
         modifier = modifier,
@@ -367,7 +369,8 @@ fun Text2(
         style = style.toTextStyle(),
         color = color,
         fontWeight = fontWeight,
-        textAlign = textAlign
+        textAlign = textAlign,
+        fontSize = fontSize
     )
 }
 
@@ -693,6 +696,7 @@ fun LabelSmall(
     color: Color = MaterialTheme.extendedColors.textDark,
     fontWeight: FontWeight = FontWeight.Normal,
     textAlign: TextAlign = TextAlign.Unspecified,
+    fontSize: TextUnit = TextUnit.Unspecified,
 ) {
     Text2(
         modifier = modifier,
@@ -860,9 +864,8 @@ fun ProfileAction(
                 )
                 if (desc?.isNotEmpty() == true) {
                     LabelSmall(
-                        modifier = Modifier,
                         text = desc,
-                        color = MaterialTheme.colorScheme.outlineVariant
+                        color = MaterialTheme.colorScheme.outlineVariant,
                     )
                 }
             }

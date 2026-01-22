@@ -198,7 +198,7 @@ fun UserSkillLevelSelection(
 ) {
     val hapticFeedback = LocalHapticFeedback.current
     val skillLevels = getSkillLevelStates()
-    
+
     BodyLarge(
         modifier = Modifier.padding(
             start = Padding.padding4Dp, top = Padding.padding24Dp
@@ -242,7 +242,7 @@ fun UserBioTextField(
     val hapticFeedback = LocalHapticFeedback.current
     val charLimit = 200
     val shape = RoundedCornerShape(size = 22.dp)
-    
+
     BodyMedium(
         modifier = Modifier.padding(
             start = Padding.padding4Dp, top = Padding.padding24Dp
@@ -322,7 +322,7 @@ fun UserPlayTimeSelection(
 ) {
     val playTimeOptions = stringArrayResource(Res.array.pref_set_up_finish_profile_play_time)
     val hapticFeedback = LocalHapticFeedback.current
-    
+
     BodyLarge(
         modifier = Modifier.padding(
             start = Padding.padding4Dp, top = Padding.padding24Dp
@@ -442,6 +442,18 @@ sealed class SkillLevel(val name: String) {
         @Composable
         override fun iconBgColor(): Color {
             return MaterialTheme.extendedColors.purpleContainer
+        }
+    }
+
+    companion object {
+        fun valueOf(skillLevel: String): SkillLevel {
+            return when (skillLevel) {
+                OpenForAll.name -> OpenForAll
+                Beginner.name -> Beginner
+                Intermediate.name -> Intermediate
+                Competitive.name -> Competitive
+                else -> Beginner
+            }
         }
     }
 }

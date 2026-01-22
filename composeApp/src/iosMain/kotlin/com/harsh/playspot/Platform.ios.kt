@@ -2,6 +2,8 @@ package com.harsh.playspot
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
+import platform.Foundation.NSDate
+import platform.Foundation.timeIntervalSince1970
 import platform.UIKit.UIApplication
 import platform.UIKit.UIDevice
 import platform.UIKit.UIStatusBarStyleDarkContent
@@ -25,3 +27,10 @@ actual fun SetStatusBarAppearance(isDarkTheme: Boolean) {
 
 actual val isIOS: Boolean = true
 actual val isAndroid: Boolean = false
+actual fun currentTimeMillis(): Long {
+    return (NSDate().timeIntervalSince1970 * 1000).toLong()
+}
+
+actual fun generateUniqueId(): String {
+    return platform.Foundation.NSUUID().UUIDString()
+}
