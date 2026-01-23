@@ -54,6 +54,7 @@ fun HomeScreenRoute(
     onAddSportClicked: () -> Unit = {},
     onCreateEventClicked: () -> Unit = {},
     onEditPictureClicked: () -> Unit = {},
+    onEditEventClicked:(String) -> Unit = {},
     onEventClick: (String) -> Unit = {}
 ) {
     SetStatusBarAppearance(isDarkTheme = isSystemInDarkTheme())
@@ -122,10 +123,10 @@ fun HomeScreenRoute(
                     0 -> EventsScreen(
                         openOrganizingEvents = openOrganizingEvents,
                         onCreateEventClick = onCreateEventClicked,
-                        onEventClick = onEventClick
+                        onEventClick = onEditEventClicked
                     )
 
-                    1 -> ExploreScreen()
+                    1 -> ExploreScreen(onEventClick = onEventClick)
                     2 -> GroupsScreen()
                     3 -> ProfileScreenRoute(
                         onBackPressed = { selectedTabIndex = 0 },

@@ -10,6 +10,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.harsh.playspot.ui.events.CreateEventScreenRoute
+import com.harsh.playspot.ui.events.EventDetailsScreenRoute
 import com.harsh.playspot.ui.events.MyEventsScreenRoute
 import com.harsh.playspot.ui.home.HomeScreenRoute
 import com.harsh.playspot.ui.login.LoginScreenRoute
@@ -124,8 +125,11 @@ fun NavigationRoutes(hasUserSession: Boolean, onBackPressed: () -> Unit) {
                 onEditPictureClicked = {
                     navController.navigate("Route.EditProfilePicture")
                 },
-                onEventClick = { eventId ->
+                onEditEventClicked = { eventId ->
                     navController.navigate("Route.EditEvent/$eventId")
+                },
+                onEventClick = { eventId ->
+                    navController.navigate("Route.EventDetails/$eventId")
                 }
             )
         }
@@ -172,7 +176,7 @@ fun NavigationRoutes(hasUserSession: Boolean, onBackPressed: () -> Unit) {
                 eventId = eventId
             )
         }
-
+//Route.MyEvents not being used
         composable("Route.MyEvents") { backStackEntry ->
 
             MyEventsScreenRoute(
@@ -180,8 +184,16 @@ fun NavigationRoutes(hasUserSession: Boolean, onBackPressed: () -> Unit) {
                 onBackPressed = { navController.popBackStack() },
                 onCreateEventClick = { navController.navigate("Route.CreateEvent") },
                 onEventClick = { eventId ->
-                    // TODO: Navigate to event details
+                    navController.navigate("Route.EventDetails/$eventId")
                 }
+            )
+        }
+
+        composable("Route.EventDetails/{eventId}") { backStackEntry ->
+            val eventId = backStackEntry.arguments?.getString("eventId") ?: ""
+            EventDetailsScreenRoute(
+                eventId = eventId,
+                onBackPressed = { navController.popBackStack() }
             )
         }
     }
