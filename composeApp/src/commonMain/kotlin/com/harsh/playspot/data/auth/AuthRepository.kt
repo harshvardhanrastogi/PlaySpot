@@ -83,6 +83,48 @@ class AuthRepository private constructor() {
         }
     }
 
+    /**
+     * Update the current user's display name.
+     * This updates the Firebase Auth profile, not Firestore.
+     */
+    suspend fun updateDisplayName(displayName: String): Result<Unit> {
+        return try {
+            val user = auth.currentUser ?: return Result.failure(Exception("No user logged in"))
+            user.updateProfile(displayName = displayName)
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Update the current user's photo URL.
+     * This updates the Firebase Auth profile, not Firestore.
+     */
+    suspend fun updatePhotoUrl(photoUrl: String): Result<Unit> {
+        return try {
+            val user = auth.currentUser ?: return Result.failure(Exception("No user logged in"))
+            user.updateProfile(photoUrl = photoUrl)
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Update both display name and photo URL at once.
+     * This updates the Firebase Auth profile, not Firestore.
+     */
+    suspend fun updateProfile(displayName: String? = null, photoUrl: String? = null): Result<Unit> {
+        return try {
+            val user = auth.currentUser ?: return Result.failure(Exception("No user logged in"))
+            user.updateProfile(displayName = displayName, photoUrl = photoUrl)
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     companion object {
         private val INSTANCE: AuthRepository by lazy { AuthRepository() }
 

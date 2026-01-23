@@ -126,6 +126,9 @@ class AddProfilePictureViewModel(
                         documentId = docId,
                         updates = mapOf("profilePictureUrl" to response.url)
                     )
+
+                    // Also update Firebase Auth photo URL
+                    authRepository.updatePhotoUrl(response.url)
                     
                     _uiState.update { 
                         it.copy(

@@ -140,6 +140,9 @@ class SignUpViewModel(
 
             authRepository.signUpWithEmail(currentState.email, currentState.password)
                 .onSuccess { user ->
+                    // Update Firebase Auth display name
+                    authRepository.updateDisplayName(currentState.fullName)
+
                     // Create profile in Firestore using Firebase Auth UID as document ID
                     val profile = Profile(
                         fullName = currentState.fullName,
