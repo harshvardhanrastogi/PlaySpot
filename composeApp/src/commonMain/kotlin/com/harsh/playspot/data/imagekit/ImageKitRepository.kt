@@ -269,6 +269,27 @@ class ImageKitRepository {
         
         return "$urlEndpoint/tr:w-$size,h-$size,fo-face,c-maintain_ratio,q-80,f-auto/$path"
     }
+
+    /**
+     * Get an avatar URL optimized for small circular display (40dp avatars)
+     * Uses 120px (3x density) for crisp display on most devices
+     * Uses face detection for smart cropping
+     * 
+     * @param imagePath The path or full URL of the image
+     * @return Optimized circular avatar URL
+     */
+    fun getAvatarUrl(imagePath: String): String {
+        if (imagePath.isBlank()) return ""
+        
+        val path = if (imagePath.startsWith("http")) {
+            imagePath.substringAfter(urlEndpoint).removePrefix("/")
+        } else {
+            imagePath.removePrefix("/")
+        }
+        
+        // 40dp * 3x density = 120px for crisp display
+        return "$urlEndpoint/tr:w-120,h-120,fo-face,c-maintain_ratio,q-80,f-auto/$path"
+    }
     
     /**
      * Get an event cover URL optimized for display

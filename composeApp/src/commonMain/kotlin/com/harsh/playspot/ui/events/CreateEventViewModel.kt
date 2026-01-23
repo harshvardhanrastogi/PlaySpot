@@ -6,6 +6,7 @@ import com.harsh.playspot.currentTimeMillis
 import com.harsh.playspot.generateUniqueId
 import com.harsh.playspot.dao.Event
 import com.harsh.playspot.dao.EventStatus
+import com.harsh.playspot.dao.Participant
 import com.harsh.playspot.dao.Venue
 import com.harsh.playspot.data.auth.AuthRepository
 import com.harsh.playspot.data.firestore.CollectionNames
@@ -52,7 +53,7 @@ data class CreateEventUiState(
     // For backward compatibility
     val location: String get() = venueName
     val locationAddress: String get() = venueAddress
-    
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other == null || this::class != other::class) return false
@@ -148,10 +149,10 @@ class CreateEventViewModel(
      */
     fun loadEvent(eventId: String) {
         if (eventId.isBlank()) return
-        
+
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, isEditMode = true, eventId = eventId) }
-            
+
             firestoreRepository.getDocument<Event>(CollectionNames.EVENTS, eventId)
                 .onSuccess { event ->
                     if (event != null) {
@@ -160,12 +161,12 @@ class CreateEventViewModel(
                         } catch (e: Exception) {
                             SkillLevel.Beginner
                         }
-                        
+
                         // Get optimized image URL if cover image exists
                         val optimizedCoverUrl = if (event.coverImageUrl.isNotBlank()) {
                             imageKitRepository.getEventCoverUrl(event.coverImageUrl)
                         } else ""
-                        
+
                         _uiState.update {
                             it.copy(
                                 isLoading = false,
@@ -201,7 +202,7 @@ class CreateEventViewModel(
         // Clear existing URL when new image is selected (will be uploaded on save)
         _uiState.update { it.copy(coverImageBytes = bytes, coverImageUrl = "") }
     }
-    
+
     /**
      * Upload cover image to ImageKit
      * @param eventId The event ID for naming the image
@@ -210,16 +211,16 @@ class CreateEventViewModel(
     private suspend fun uploadCoverImageIfNeeded(eventId: String): String? {
         val currentState = _uiState.value
         val imageBytes = currentState.coverImageBytes ?: return currentState.coverImageUrl.ifBlank { null }
-        
+
         // If we have bytes but also have the same URL (image was downloaded), skip upload
         if (currentState.coverImageUrl.isNotBlank() && currentState.isEditMode) {
             // Check if user selected a new image by comparing - if bytes were just downloaded,
             // we shouldn't re-upload. We track this by clearing the URL when a new image is selected.
             return currentState.coverImageUrl
         }
-        
+
         _uiState.update { it.copy(isUploadingImage = true) }
-        
+
         return try {
             imageKitRepository.uploadEventCover(imageBytes, eventId)
                 .onSuccess { response ->
@@ -265,7 +266,7 @@ class CreateEventViewModel(
         latitude: Double? = null,
         longitude: Double? = null
     ) {
-        _uiState.update { 
+        _uiState.update {
             it.copy(
                 venueName = name,
                 venueAddress = address,
@@ -273,7 +274,7 @@ class CreateEventViewModel(
                 venueLatitude = latitude,
                 venueLongitude = longitude,
                 locationError = null
-            ) 
+            )
         }
     }
 
@@ -293,23 +294,28 @@ class CreateEventViewModel(
         viewModelScope.launch {
             val currentState = _uiState.value
             _uiState.update { it.copy(isLoading = true) }
-            
+
             try {
                 val currentUser = authRepository.currentUser
-                
+                val creatorId = currentUser?.uid ?: ""
+                val creatorName = currentUser?.displayName ?: ""
+                val creatorProfileUrl = currentUser?.photoURL ?: ""
+
                 // Generate event ID first for image naming
                 val eventId = generateUniqueId()
-                
+
                 // Upload cover image if selected
                 val coverImageUrl = uploadCoverImageIfNeeded(eventId) ?: ""
-                
+
                 val event = createEventFromState(
                     state = currentState.copy(coverImageUrl = coverImageUrl),
-                    creatorId = currentUser?.uid ?: "",
+                    creatorId = creatorId,
+                    creatorName = creatorName,
+                    creatorProfileUrl = creatorProfileUrl,
                     status = EventStatus.DRAFT,
                     eventId = eventId
                 )
-                
+
                 firestoreRepository.setDocument(CollectionNames.EVENTS, event.id, event)
                     .onSuccess {
                         _uiState.update { it.copy(isLoading = false) }
@@ -350,7 +356,7 @@ class CreateEventViewModel(
             dateError = "Date is required"
             hasError = true
         }
-        
+
         if (currentState.venueName.isBlank()) {
             locationError = "Please select a venue"
             hasError = true
@@ -378,20 +384,26 @@ class CreateEventViewModel(
                     _events.emit(CreateEventEvent.CreateError("Please login to create an event"))
                     return@launch
                 }
-                
+
+                // Get creator info from Firebase Auth
+                val creatorName = currentUser.displayName ?: ""
+                val creatorProfileUrl = currentUser.photoURL ?: ""
+
                 // Generate event ID first for image naming
                 val eventId = generateUniqueId()
-                
+
                 // Upload cover image if selected
                 val coverImageUrl = uploadCoverImageIfNeeded(eventId) ?: ""
-                
+
                 val event = createEventFromState(
                     state = currentState.copy(coverImageUrl = coverImageUrl),
                     creatorId = currentUser.uid,
+                    creatorName = creatorName,
+                    creatorProfileUrl = creatorProfileUrl,
                     status = EventStatus.UPCOMING,
                     eventId = eventId
                 )
-                
+
                 firestoreRepository.setDocument(CollectionNames.EVENTS, event.id, event)
                     .onSuccess {
                         _uiState.update { it.copy(isLoading = false) }
@@ -407,13 +419,13 @@ class CreateEventViewModel(
             }
         }
     }
-    
+
     /**
      * Update an existing event
      */
     fun updateEvent() {
         val currentState = _uiState.value
-        
+
         if (!currentState.isEditMode || currentState.eventId.isBlank()) {
             viewModelScope.launch {
                 _events.emit(CreateEventEvent.CreateError("Cannot update: not in edit mode"))
@@ -442,7 +454,7 @@ class CreateEventViewModel(
             dateError = "Date is required"
             hasError = true
         }
-        
+
         if (currentState.venueName.isBlank()) {
             locationError = "Please select a venue"
             hasError = true
@@ -466,7 +478,7 @@ class CreateEventViewModel(
             try {
                 // Upload cover image if a new image was selected
                 val coverImageUrl = uploadCoverImageIfNeeded(currentState.eventId)
-                
+
                 val updates = mutableMapOf<String, Any>(
                     "matchName" to currentState.matchName.trim(),
                     "sportType" to currentState.sportType,
@@ -485,12 +497,12 @@ class CreateEventViewModel(
                     ),
                     "updatedAt" to currentTimeMillis()
                 )
-                
+
                 // Add cover image URL if available
                 if (coverImageUrl != null) {
                     updates["coverImageUrl"] = coverImageUrl
                 }
-                
+
                 firestoreRepository.updateDocument(CollectionNames.EVENTS, currentState.eventId, updates)
                     .onSuccess {
                         _uiState.update { it.copy(isLoading = false) }
@@ -512,7 +524,7 @@ class CreateEventViewModel(
      */
     fun deleteEvent() {
         val currentState = _uiState.value
-        
+
         if (!currentState.isEditMode || currentState.eventId.isBlank()) {
             viewModelScope.launch {
                 _events.emit(CreateEventEvent.CreateError("Cannot delete: not in edit mode"))
@@ -543,13 +555,24 @@ class CreateEventViewModel(
     private fun createEventFromState(
         state: CreateEventUiState,
         creatorId: String,
+        creatorName: String,
+        creatorProfileUrl: String,
         status: String,
         eventId: String = generateUniqueId()
     ): Event {
         val currentTimeMillis = currentTimeMillis()
-        
+
+        // Create creator as first participant
+        val creatorParticipant = Participant(
+            id = creatorId,
+            name = creatorName.trim(),
+            profileUrl = creatorProfileUrl
+        )
+
         return Event(
             id = eventId,
+            creatorName = creatorName.trim(),
+            creatorProfileUrl = creatorProfileUrl,
             matchName = state.matchName.trim(),
             sportType = state.sportType,
             date = state.date,
@@ -567,7 +590,7 @@ class CreateEventViewModel(
                 placeId = state.venuePlaceId
             ),
             creatorId = creatorId,
-            participants = listOf(creatorId), // Creator joins automatically
+            participants = listOf(creatorParticipant), // Creator joins automatically
             status = status,
             createdAt = currentTimeMillis,
             updatedAt = currentTimeMillis,

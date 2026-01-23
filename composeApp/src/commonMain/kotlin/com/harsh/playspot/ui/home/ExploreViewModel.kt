@@ -47,9 +47,14 @@ class ExploreViewModel(
                 value = EventStatus.UPCOMING
             )
                 .onSuccess { events ->
-                    // Filter out current user's events (Firestore doesn't support != efficiently)
+                    // Filter out:
+                    // 1. Events created by current user
+                    // 2. Events where current user is already a participant
                     val recommendedMatches = events
-                        .filter { event -> event.creatorId != currentUserId }
+                        .filter { event -> 
+                            event.creatorId != currentUserId &&
+                            event.participants.none { it.id == currentUserId }
+                        }
                         .map { event -> event.toRecommendedMatch() }
 
                     _uiState.update {

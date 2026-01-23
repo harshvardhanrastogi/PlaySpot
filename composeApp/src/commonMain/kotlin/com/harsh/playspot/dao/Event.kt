@@ -3,6 +3,16 @@ package com.harsh.playspot.dao
 import kotlinx.serialization.Serializable
 
 /**
+ * Data class representing a participant in an event
+ */
+@Serializable
+data class Participant(
+    val id: String = "",
+    val name: String = "",
+    val profileUrl: String = ""
+)
+
+/**
  * Data class representing a sports event/match stored in Firestore
  */
 @Serializable
@@ -23,9 +33,10 @@ data class Event(
     // Creator info
     val creatorId: String = "",
     val creatorName: String = "",
+    val creatorProfileUrl: String = "",
     
-    // Participants (list of user IDs)
-    val participants: List<String> = emptyList(),
+    // Participants (list of participant objects with id, name, and profileUrl)
+    val participants: List<Participant> = emptyList(),
     
     // Status
     val status: String = EventStatus.UPCOMING,

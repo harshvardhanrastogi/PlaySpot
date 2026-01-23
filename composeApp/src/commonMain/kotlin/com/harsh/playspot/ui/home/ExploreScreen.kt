@@ -125,20 +125,23 @@ data class FilterChip(
 
 @Composable
 fun ExploreScreen(
+    onEventClick: (String) -> Unit = {},
     viewModel: ExploreViewModel = viewModel { ExploreViewModel() }
 ) {
     val uiState by viewModel.uiState.collectAsState()
     
     ExploreScreenContent(
         recommendedMatches = uiState.recommendedMatches,
-        isLoading = uiState.isLoading
+        isLoading = uiState.isLoading,
+        onEventClick = onEventClick
     )
 }
 
 @Composable
 private fun ExploreScreenContent(
     recommendedMatches: List<RecommendedMatch>,
-    isLoading: Boolean = false
+    isLoading: Boolean = false,
+    onEventClick: (String) -> Unit = {}
 ) {
     var searchQuery by remember { mutableStateOf("") }
     var selectedFilter by remember { mutableStateOf("All Sports") }
@@ -234,7 +237,10 @@ private fun ExploreScreenContent(
         
         // Recommended Matches
         items(recommendedMatches) { match ->
-            RecommendedMatchCard(match = match)
+            RecommendedMatchCard(
+                match = match,
+                onClick = { onEventClick(match.id) }
+            )
         }
         
         // Bottom spacing
@@ -754,7 +760,10 @@ private fun RecommendedHeader() {
 }
 
 @Composable
-private fun RecommendedMatchCard(match: RecommendedMatch) {
+private fun RecommendedMatchCard(
+    match: RecommendedMatch,
+    onClick: () -> Unit = {}
+) {
     val shape = RoundedCornerShape(24.dp)
     
     Row(
@@ -769,7 +778,7 @@ private fun RecommendedMatchCard(match: RecommendedMatch) {
                 color = MaterialTheme.extendedColors.outline,
                 shape = shape
             )
-            .clickable { /* TODO: Open match */ }
+            .clickable { onClick() }
             .padding(12.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
