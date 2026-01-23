@@ -2,6 +2,8 @@ package com.harsh.playspot.ui.home
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import coil3.compose.AsyncImage
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -51,11 +53,13 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
@@ -72,6 +76,7 @@ import com.harsh.playspot.ui.core.LabelSmall
 import com.harsh.playspot.ui.core.Padding
 import com.harsh.playspot.ui.core.TitleMedium
 import com.harsh.playspot.ui.core.extendedColors
+import com.harsh.playspot.ui.core.getSportsMap
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 // Data classes for Explore screen
@@ -100,7 +105,8 @@ data class RecommendedMatch(
     val status: MatchStatus,
     val attendees: Int = 0,
     val maxAttendees: Int = 0,
-    val tags: List<String> = emptyList()
+    val tags: List<String> = emptyList(),
+    val coverImageUrl: String = ""
 )
 
 sealed class MatchStatus {
@@ -117,9 +123,23 @@ data class FilterChip(
     val iconColor: Color = Color.Unspecified
 )
 
-@Preview
 @Composable
-fun ExploreScreen() {
+fun ExploreScreen(
+    viewModel: ExploreViewModel = viewModel { ExploreViewModel() }
+) {
+    val uiState by viewModel.uiState.collectAsState()
+    
+    ExploreScreenContent(
+        recommendedMatches = uiState.recommendedMatches,
+        isLoading = uiState.isLoading
+    )
+}
+
+@Composable
+private fun ExploreScreenContent(
+    recommendedMatches: List<RecommendedMatch>,
+    isLoading: Boolean = false
+) {
     var searchQuery by remember { mutableStateOf("") }
     var selectedFilter by remember { mutableStateOf("All Sports") }
     
@@ -162,58 +182,6 @@ fun ExploreScreen() {
             date = "Oct 25 • 10 AM",
             location = "Central Park Loop",
             status = MatchStatus.Open
-        )
-    )
-    
-    val recommendedMatches = listOf(
-        RecommendedMatch(
-            id = "1",
-            title = "Morning Tennis Doubles",
-            sport = "Tennis",
-            sportColor = Color(0xFF3B82F6),
-            date = "Tomorrow • 6:30 AM",
-            location = "Mission Bay Courts",
-            distance = "0.5mi",
-            tag = "Friendly",
-            status = MatchStatus.NeedPlayer("Need 1 player"),
-            attendees = 3
-        ),
-        RecommendedMatch(
-            id = "2",
-            title = "Lunchtime Ping Pong",
-            sport = "Table Tennis",
-            sportColor = Color(0xFF8B5CF6),
-            date = "Wed, Oct 29 • 12:30 PM",
-            location = "Office Rec Room",
-            distance = "0.1mi",
-            tag = "FREE",
-            tagIsPrimary = true,
-            status = MatchStatus.Attending(4, 8),
-            tags = listOf("Casual", "Mixed")
-        ),
-        RecommendedMatch(
-            id = "3",
-            title = "Indoor Volleyball Pickup",
-            sport = "Volleyball",
-            sportColor = Color(0xFFF97316),
-            date = "Fri, Oct 31 • 6:00 PM",
-            location = "SF Sports Center",
-            distance = "3.0mi",
-            tag = "$15",
-            status = MatchStatus.SpotsLeft(2),
-            attendees = 2
-        ),
-        RecommendedMatch(
-            id = "4",
-            title = "Evening Futsal 5v5",
-            sport = "Soccer",
-            sportColor = Color(0xFF3B82F6),
-            date = "Sat, Nov 1 • 8:30 PM",
-            location = "The Pitch",
-            distance = "1.5mi",
-            tag = "$10",
-            status = MatchStatus.NeedPlayer("Need GK"),
-            tags = listOf("Interm.", "Turf")
         )
     )
     
@@ -805,7 +773,7 @@ private fun RecommendedMatchCard(match: RecommendedMatch) {
             .padding(12.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        // Image placeholder with tag
+        // Cover image or sport icon placeholder
         Box(
             modifier = Modifier
                 .size(112.dp)
@@ -817,26 +785,27 @@ private fun RecommendedMatchCard(match: RecommendedMatch) {
                             match.sportColor
                         )
                     )
-                )
+                ),
+            contentAlignment = Alignment.Center
         ) {
-            // Tag badge
-            Box(
-                modifier = Modifier
-                    .align(Alignment.TopStart)
-                    .padding(6.dp)
-                    .clip(RoundedCornerShape(4.dp))
-                    .background(
-                        if (match.tagIsPrimary) MaterialTheme.colorScheme.primary.copy(alpha = 0.9f)
-                        else MaterialTheme.extendedColors.widgetBg.copy(alpha = 0.9f)
-                    )
-                    .padding(horizontal = 6.dp, vertical = 3.dp)
-            ) {
-                LabelSmall(
-                    text = match.tag,
-                    fontWeight = FontWeight.Bold,
-                    color = if (match.tagIsPrimary) Color.White else MaterialTheme.extendedColors.textDark,
-                    fontSize = 9.sp
+            if (match.coverImageUrl.isNotBlank()) {
+                AsyncImage(
+                    model = match.coverImageUrl,
+                    contentDescription = match.title,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
                 )
+            } else {
+                // Show sport icon when no cover image
+                val sportUi = getSportsMap()[match.sport]
+                sportUi?.let {
+                    Icon(
+                        imageVector = it.icon,
+                        contentDescription = match.sport,
+                        tint = Color.White,
+                        modifier = Modifier.size(40.dp)
+                    )
+                }
             }
         }
         
@@ -1086,4 +1055,81 @@ private fun MatchStatusBadgeSmall(status: MatchStatus) {
             )
         }
     }
+}
+
+@Preview
+@Composable
+fun ExploreScreenPreview() {
+    val sampleRecommendedMatches = listOf(
+        RecommendedMatch(
+            id = "1",
+            title = "Morning Tennis Doubles",
+            sport = "Tennis",
+            sportColor = Color(0xFF3B82F6),
+            date = "Tomorrow • 6:30 AM",
+            location = "Mission Bay Courts",
+            distance = "0.5mi",
+            tag = "Friendly",
+            status = MatchStatus.NeedPlayer("Need 1 player"),
+            attendees = 3
+        ),
+        RecommendedMatch(
+            id = "2",
+            title = "Lunchtime Ping Pong",
+            sport = "Table Tennis",
+            sportColor = Color(0xFF8B5CF6),
+            date = "Wed, Oct 29 • 12:30 PM",
+            location = "Office Rec Room",
+            distance = "0.1mi",
+            tag = "FREE",
+            tagIsPrimary = true,
+            status = MatchStatus.Attending(4, 8),
+            tags = listOf("Casual", "Mixed")
+        ),
+        RecommendedMatch(
+            id = "3",
+            title = "Indoor Volleyball Pickup",
+            sport = "Volleyball",
+            sportColor = Color(0xFFF97316),
+            date = "Fri, Oct 31 • 6:00 PM",
+            location = "SF Sports Center",
+            distance = "3.0mi",
+            tag = "$15",
+            status = MatchStatus.SpotsLeft(2),
+            attendees = 2
+        ),
+        RecommendedMatch(
+            id = "4",
+            title = "Evening Futsal 5v5",
+            sport = "Soccer",
+            sportColor = Color(0xFF3B82F6),
+            date = "Sat, Nov 1 • 8:30 PM",
+            location = "The Pitch",
+            distance = "1.5mi",
+            tag = "$10",
+            status = MatchStatus.NeedPlayer("Need GK"),
+            tags = listOf("Interm.", "Turf")
+        )
+    )
+    
+    ExploreScreenContent(
+        recommendedMatches = sampleRecommendedMatches
+    )
+}
+
+@Preview(showBackground = true)
+@Composable
+fun RecommendedMatchCardPreview() {
+    RecommendedMatchCard(RecommendedMatch(
+        id = "1",
+        title = "Morning Tennis Doubles",
+        sport = "Tennis",
+        sportColor = Color(0xFF3B82F6),
+        date = "Tomorrow • 6:30 AM",
+        location = "Mission Bay Courts",
+        distance = "0.5mi",
+        tag = "Friendly",
+        status = MatchStatus.NeedPlayer("Need 1 player"),
+        attendees = 3
+    ))
 }

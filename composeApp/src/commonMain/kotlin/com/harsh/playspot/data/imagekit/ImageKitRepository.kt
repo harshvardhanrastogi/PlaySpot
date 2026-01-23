@@ -234,6 +234,26 @@ class ImageKitRepository {
     }
     
     /**
+     * Get an explore card cover image URL optimized for 112dp display
+     * Uses 336px (3x density) for crisp display on most devices
+     * 
+     * @param imagePath The path or full URL of the image
+     * @return Optimized square cover URL for explore cards
+     */
+    fun getExploreCoverUrl(imagePath: String): String {
+        if (imagePath.isBlank()) return ""
+        
+        val path = if (imagePath.startsWith("http")) {
+            imagePath.substringAfter(urlEndpoint).removePrefix("/")
+        } else {
+            imagePath.removePrefix("/")
+        }
+        
+        // 112dp * 3x density = 336px for crisp display
+        return "$urlEndpoint/tr:w-336,h-336,fo-auto,c-maintain_ratio,q-80,f-auto/$path"
+    }
+    
+    /**
      * Get a profile picture URL optimized for display
      * 
      * @param imagePath The path or full URL of the image

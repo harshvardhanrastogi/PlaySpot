@@ -1052,24 +1052,64 @@ fun LargeButtonPreview() {
     }
 }
 
+/**
+ * Sport colors - non-composable, can be used in ViewModels
+ */
+object SportColors {
+    val Football = Color(0xFF22C55E)
+    val Basketball = Color(0xFFF97316)
+    val Tennis = Color(0xFFEAB308)
+    val Running = Color(0xFFEC4899)
+    val Volleyball = Color(0xFF8B5CF6)
+    val Swimming = Color(0xFF3B82F6)
+    val Cycling = Color(0xFF14B8A6)
+    val Cricket = Color(0xFF10B981)
+    val Baseball = Color(0xFFEF4444)
+    val Badminton = Color(0xFF06B6D4)
+    val Gym = Color(0xFF6366F1)
+    val Golf = Color(0xFF84CC16)
+    val Yoga = Color(0xFFE50833)
+    val Default = Color(0xFF3B82F6)
+    
+    private val colorMap = mapOf(
+        "Football" to Football,
+        "Basketball" to Basketball,
+        "Tennis" to Tennis,
+        "Running" to Running,
+        "Volleyball" to Volleyball,
+        "Swimming" to Swimming,
+        "Cycling" to Cycling,
+        "Cricket" to Cricket,
+        "Baseball" to Baseball,
+        "Badminton" to Badminton,
+        "Gym" to Gym,
+        "Golf" to Golf,
+        "Yoga" to Yoga,
+        "Soccer" to Football, // Alias
+        "Table Tennis" to Badminton // Similar color
+    )
+    
+    fun getColor(sportType: String): Color = colorMap[sportType] ?: Default
+}
+
 data class SportUi(val name: String, val color: Color, val icon: ImageVector)
 
 @Composable
 fun getSportsMap() =
     mapOf(
-        "Football" to SportUi("Football", Color(0xFF22C55E), Icons.Filled.SportsSoccer),
-        "Basketball" to SportUi("Basketball", Color(0xFFF97316), Icons.Filled.SportsBasketball),
-        "Tennis" to SportUi("Tennis", Color(0xFFEAB308), Icons.Filled.SportsTennis),
-        "Running" to SportUi("Running", Color(0xFFEC4899), Icons.AutoMirrored.Filled.DirectionsRun),
-        "Volleyball" to SportUi("Volleyball", Color(0xFF8B5CF6), Icons.Filled.SportsVolleyball),
-        "Swimming" to SportUi("Swimming", Color(0xFF3B82F6), Icons.Filled.Pool),
-        "Cycling" to SportUi("Cycling", Color(0xFF14B8A6), Icons.AutoMirrored.Filled.DirectionsBike),
-        "Cricket" to SportUi("Cricket", Color(0xFF10B981), Icons.Filled.SportsCricket),
-        "Baseball" to SportUi("Baseball", Color(0xFFEF4444), Icons.Filled.SportsBaseball),
-        "Badminton" to SportUi("Badminton", Color(0xFF06B6D4), vectorResource(Res.drawable.ic_badminton)),
-        "Gym" to SportUi("Gym", Color(0xFF6366F1), Icons.Filled.FitnessCenter),
-        "Golf" to SportUi("Golf", Color(0xFF84CC16), Icons.Filled.SportsGolf),
-        "Yoga" to SportUi("Yoga", Color(0xFFE50833), Icons.Filled.SelfImprovement) // Added appropriate icon
+        "Football" to SportUi("Football", SportColors.Football, Icons.Filled.SportsSoccer),
+        "Basketball" to SportUi("Basketball", SportColors.Basketball, Icons.Filled.SportsBasketball),
+        "Tennis" to SportUi("Tennis", SportColors.Tennis, Icons.Filled.SportsTennis),
+        "Running" to SportUi("Running", SportColors.Running, Icons.AutoMirrored.Filled.DirectionsRun),
+        "Volleyball" to SportUi("Volleyball", SportColors.Volleyball, Icons.Filled.SportsVolleyball),
+        "Swimming" to SportUi("Swimming", SportColors.Swimming, Icons.Filled.Pool),
+        "Cycling" to SportUi("Cycling", SportColors.Cycling, Icons.AutoMirrored.Filled.DirectionsBike),
+        "Cricket" to SportUi("Cricket", SportColors.Cricket, Icons.Filled.SportsCricket),
+        "Baseball" to SportUi("Baseball", SportColors.Baseball, Icons.Filled.SportsBaseball),
+        "Badminton" to SportUi("Badminton", SportColors.Badminton, vectorResource(Res.drawable.ic_badminton)),
+        "Gym" to SportUi("Gym", SportColors.Gym, Icons.Filled.FitnessCenter),
+        "Golf" to SportUi("Golf", SportColors.Golf, Icons.Filled.SportsGolf),
+        "Yoga" to SportUi("Yoga", SportColors.Yoga, Icons.Filled.SelfImprovement)
     )
 
 
