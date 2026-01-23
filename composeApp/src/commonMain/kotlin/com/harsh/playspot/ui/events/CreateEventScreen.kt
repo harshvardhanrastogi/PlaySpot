@@ -2,6 +2,7 @@ package com.harsh.playspot.ui.events
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import coil3.compose.AsyncImage
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -287,6 +288,7 @@ private fun CreateEventScreen(
                 // Cover Photo Section
                 CoverPhotoSection(
                     coverImageBytes = uiState.coverImageBytes,
+                    coverImageUrl = uiState.coverImageUrl,
                     onCoverPhotoClick = onCoverPhotoClick
                 )
 
@@ -426,9 +428,11 @@ private fun CreateEventScreen(
 @Composable
 private fun CoverPhotoSection(
     coverImageBytes: ByteArray?,
+    coverImageUrl: String,
     onCoverPhotoClick: () -> Unit
 ) {
     val shape = RoundedCornerShape(16.dp)
+    val hasImage = coverImageBytes != null || coverImageUrl.isNotBlank()
 
     Box(
         modifier = Modifier
@@ -444,15 +448,65 @@ private fun CoverPhotoSection(
             .clickable { onCoverPhotoClick() },
         contentAlignment = Alignment.Center
     ) {
-        if (coverImageBytes != null) {
-            // Display selected image
-            Image(
-                bitmap = coverImageBytes.toImageBitmap(),
-                contentDescription = "Cover photo",
-                modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop
-            )
-            // Edit button overlay
+        when {
+            // Display newly selected image from bytes (takes priority)
+            coverImageBytes != null -> {
+                Image(
+                    bitmap = coverImageBytes.toImageBitmap(),
+                    contentDescription = "Cover photo",
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
+            }
+            // Display existing image from URL
+            coverImageUrl.isNotBlank() -> {
+                AsyncImage(
+                    model = coverImageUrl,
+                    contentDescription = "Cover photo",
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
+            }
+            // Empty state - show placeholder
+            else -> {
+                Image(
+                    painter = painterResource(Res.drawable.skateboarder),
+                    contentDescription = "Cover placeholder",
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop,
+                    alpha = 0.25f
+                )
+                
+                // Overlay with add photo prompt
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(48.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.AddAPhoto,
+                            contentDescription = "Add photo",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+                    BodyMedium(
+                        text = "Add Cover Photo",
+                        color = MaterialTheme.colorScheme.outlineVariant,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+            }
+        }
+        
+        // Edit button overlay (show when any image exists)
+        if (hasImage) {
             Box(
                 modifier = Modifier
                     .align(Alignment.TopEnd)
@@ -467,41 +521,6 @@ private fun CoverPhotoSection(
                     contentDescription = "Change photo",
                     tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(20.dp)
-                )
-            }
-        } else {
-            // Empty state - show placeholder image with add photo prompt
-            Image(
-                painter = painterResource(Res.drawable.skateboarder),
-                contentDescription = "Cover placeholder",
-                modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop,
-                alpha = 0.25f
-            )
-            
-            // Overlay with add photo prompt
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(48.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.AddAPhoto,
-                        contentDescription = "Add photo",
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
-                BodyMedium(
-                    text = "Add Cover Photo",
-                    color = MaterialTheme.colorScheme.outlineVariant,
-                    fontWeight = FontWeight.SemiBold
                 )
             }
         }

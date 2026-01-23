@@ -10,6 +10,7 @@ import com.harsh.playspot.dao.Venue
 import com.harsh.playspot.data.auth.AuthRepository
 import com.harsh.playspot.data.firestore.CollectionNames
 import com.harsh.playspot.data.firestore.FirestoreRepository
+import com.harsh.playspot.data.imagekit.ImageKitRepository
 import com.harsh.playspot.ui.profile.SkillLevel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,6 +23,8 @@ import kotlinx.coroutines.launch
 
 data class CreateEventUiState(
     val coverImageBytes: ByteArray? = null,
+    val coverImageUrl: String = "", // URL of uploaded/existing cover image
+    val isUploadingImage: Boolean = false, // Image upload in progress
     val matchName: String = "",
     val sportType: String = "",
     val date: String = "",
@@ -59,6 +62,8 @@ data class CreateEventUiState(
             if (!coverImageBytes.contentEquals(other.coverImageBytes)) return false
         } else if (other.coverImageBytes != null) return false
         return matchName == other.matchName &&
+                coverImageUrl == other.coverImageUrl &&
+                isUploadingImage == other.isUploadingImage &&
                 sportType == other.sportType &&
                 date == other.date &&
                 time == other.time &&
@@ -83,6 +88,8 @@ data class CreateEventUiState(
 
     override fun hashCode(): Int {
         var result = coverImageBytes?.contentHashCode() ?: 0
+        result = 31 * result + coverImageUrl.hashCode()
+        result = 31 * result + isUploadingImage.hashCode()
         result = 31 * result + matchName.hashCode()
         result = 31 * result + sportType.hashCode()
         result = 31 * result + date.hashCode()
@@ -119,7 +126,8 @@ sealed class CreateEventEvent {
 class CreateEventViewModel(
     private val eventIdToEdit: String? = null,
     private val firestoreRepository: FirestoreRepository = FirestoreRepository.instance,
-    private val authRepository: AuthRepository = AuthRepository.getInstance()
+    private val authRepository: AuthRepository = AuthRepository.getInstance(),
+    private val imageKitRepository: ImageKitRepository = ImageKitRepository.getInstance()
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(CreateEventUiState())
@@ -153,6 +161,11 @@ class CreateEventViewModel(
                             SkillLevel.Beginner
                         }
                         
+                        // Get optimized image URL if cover image exists
+                        val optimizedCoverUrl = if (event.coverImageUrl.isNotBlank()) {
+                            imageKitRepository.getEventCoverUrl(event.coverImageUrl)
+                        } else ""
+                        
                         _uiState.update {
                             it.copy(
                                 isLoading = false,
@@ -168,7 +181,8 @@ class CreateEventViewModel(
                                 venueLongitude = if (event.venue.longitude != 0.0) event.venue.longitude else null,
                                 meetingPoint = event.venue.meetingPoint,
                                 description = event.description,
-                                skillLevel = skillLevel
+                                skillLevel = skillLevel,
+                                coverImageUrl = optimizedCoverUrl
                             )
                         }
                     } else {
@@ -184,7 +198,41 @@ class CreateEventViewModel(
     }
 
     fun onCoverImageSelected(bytes: ByteArray) {
-        _uiState.update { it.copy(coverImageBytes = bytes) }
+        // Clear existing URL when new image is selected (will be uploaded on save)
+        _uiState.update { it.copy(coverImageBytes = bytes, coverImageUrl = "") }
+    }
+    
+    /**
+     * Upload cover image to ImageKit
+     * @param eventId The event ID for naming the image
+     * @return URL of the uploaded image or null if upload fails or no image selected
+     */
+    private suspend fun uploadCoverImageIfNeeded(eventId: String): String? {
+        val currentState = _uiState.value
+        val imageBytes = currentState.coverImageBytes ?: return currentState.coverImageUrl.ifBlank { null }
+        
+        // If we have bytes but also have the same URL (image was downloaded), skip upload
+        if (currentState.coverImageUrl.isNotBlank() && currentState.isEditMode) {
+            // Check if user selected a new image by comparing - if bytes were just downloaded,
+            // we shouldn't re-upload. We track this by clearing the URL when a new image is selected.
+            return currentState.coverImageUrl
+        }
+        
+        _uiState.update { it.copy(isUploadingImage = true) }
+        
+        return try {
+            imageKitRepository.uploadEventCover(imageBytes, eventId)
+                .onSuccess { response ->
+                    _uiState.update { it.copy(isUploadingImage = false, coverImageUrl = response.url) }
+                }
+                .onFailure {
+                    _uiState.update { it.copy(isUploadingImage = false) }
+                }
+                .getOrNull()?.url
+        } catch (e: Exception) {
+            _uiState.update { it.copy(isUploadingImage = false) }
+            null
+        }
     }
 
     fun onMatchNameChange(name: String) {
@@ -248,7 +296,19 @@ class CreateEventViewModel(
             
             try {
                 val currentUser = authRepository.currentUser
-                val event = createEventFromState(currentState, currentUser?.uid ?: "", EventStatus.DRAFT)
+                
+                // Generate event ID first for image naming
+                val eventId = generateUniqueId()
+                
+                // Upload cover image if selected
+                val coverImageUrl = uploadCoverImageIfNeeded(eventId) ?: ""
+                
+                val event = createEventFromState(
+                    state = currentState.copy(coverImageUrl = coverImageUrl),
+                    creatorId = currentUser?.uid ?: "",
+                    status = EventStatus.DRAFT,
+                    eventId = eventId
+                )
                 
                 firestoreRepository.setDocument(CollectionNames.EVENTS, event.id, event)
                     .onSuccess {
@@ -319,7 +379,18 @@ class CreateEventViewModel(
                     return@launch
                 }
                 
-                val event = createEventFromState(currentState, currentUser.uid, EventStatus.UPCOMING)
+                // Generate event ID first for image naming
+                val eventId = generateUniqueId()
+                
+                // Upload cover image if selected
+                val coverImageUrl = uploadCoverImageIfNeeded(eventId) ?: ""
+                
+                val event = createEventFromState(
+                    state = currentState.copy(coverImageUrl = coverImageUrl),
+                    creatorId = currentUser.uid,
+                    status = EventStatus.UPCOMING,
+                    eventId = eventId
+                )
                 
                 firestoreRepository.setDocument(CollectionNames.EVENTS, event.id, event)
                     .onSuccess {
@@ -393,7 +464,10 @@ class CreateEventViewModel(
             _uiState.update { it.copy(isLoading = true) }
 
             try {
-                val updates = mapOf(
+                // Upload cover image if a new image was selected
+                val coverImageUrl = uploadCoverImageIfNeeded(currentState.eventId)
+                
+                val updates = mutableMapOf<String, Any>(
                     "matchName" to currentState.matchName.trim(),
                     "sportType" to currentState.sportType,
                     "date" to currentState.date,
@@ -411,6 +485,11 @@ class CreateEventViewModel(
                     ),
                     "updatedAt" to currentTimeMillis()
                 )
+                
+                // Add cover image URL if available
+                if (coverImageUrl != null) {
+                    updates["coverImageUrl"] = coverImageUrl
+                }
                 
                 firestoreRepository.updateDocument(CollectionNames.EVENTS, currentState.eventId, updates)
                     .onSuccess {
@@ -491,7 +570,8 @@ class CreateEventViewModel(
             participants = listOf(creatorId), // Creator joins automatically
             status = status,
             createdAt = currentTimeMillis,
-            updatedAt = currentTimeMillis
+            updatedAt = currentTimeMillis,
+            coverImageUrl = state.coverImageUrl
         )
     }
 }
