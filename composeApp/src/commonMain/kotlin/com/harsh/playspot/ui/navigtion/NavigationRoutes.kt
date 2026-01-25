@@ -176,18 +176,6 @@ fun NavigationRoutes(hasUserSession: Boolean, onBackPressed: () -> Unit) {
                 eventId = eventId
             )
         }
-//Route.MyEvents not being used
-        composable("Route.MyEvents") { backStackEntry ->
-
-            MyEventsScreenRoute(
-                openOrganizingEvents = true,
-                onBackPressed = { navController.popBackStack() },
-                onCreateEventClick = { navController.navigate("Route.CreateEvent") },
-                onEventClick = { eventId ->
-                    navController.navigate("Route.EventDetails/$eventId")
-                }
-            )
-        }
 
         composable("Route.EventDetails/{eventId}") { backStackEntry ->
             val eventId = backStackEntry.arguments?.getString("eventId") ?: ""

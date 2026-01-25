@@ -102,6 +102,16 @@ class ExploreViewModel(
             imageKitRepository.getExploreCoverUrl(coverImageUrl)
         } else ""
 
+        // Get optimized avatar URLs for participants (up to 4 for display)
+        // Include empty strings for participants without profile URLs so fallback initials can be shown
+        val avatarUrls = participants
+            .take(4)
+            .map { participant ->
+                if (participant.profileUrl.isNotBlank()) {
+                    imageKitRepository.getAvatarUrl(participant.profileUrl)
+                } else ""
+            }
+
         return RecommendedMatch(
             id = id,
             title = matchName,
@@ -116,7 +126,8 @@ class ExploreViewModel(
             attendees = currentPlayers,
             maxAttendees = playerLimit,
             tags = tags,
-            coverImageUrl = optimizedCoverUrl
+            coverImageUrl = optimizedCoverUrl,
+            participantAvatars = avatarUrls
         )
     }
 }

@@ -7,7 +7,9 @@ import com.harsh.playspot.generateUniqueId
 import com.harsh.playspot.dao.Event
 import com.harsh.playspot.dao.EventStatus
 import com.harsh.playspot.dao.Participant
+import com.harsh.playspot.dao.UserEvent
 import com.harsh.playspot.dao.Venue
+import com.harsh.playspot.dao.generateUserEventId
 import com.harsh.playspot.data.auth.AuthRepository
 import com.harsh.playspot.data.firestore.CollectionNames
 import com.harsh.playspot.data.firestore.FirestoreRepository
@@ -318,6 +320,9 @@ class CreateEventViewModel(
 
                 firestoreRepository.setDocument(CollectionNames.EVENTS, event.id, event)
                     .onSuccess {
+                        // Add creator to user_events collection
+                        addCreatorToUserEvents(event, creatorId)
+
                         _uiState.update { it.copy(isLoading = false) }
                         _events.emit(CreateEventEvent.SaveDraftSuccess)
                     }
@@ -406,6 +411,9 @@ class CreateEventViewModel(
 
                 firestoreRepository.setDocument(CollectionNames.EVENTS, event.id, event)
                     .onSuccess {
+                        // Add creator to user_events collection
+                        addCreatorToUserEvents(event, currentUser.uid)
+
                         _uiState.update { it.copy(isLoading = false) }
                         _events.emit(CreateEventEvent.CreateSuccess)
                     }
@@ -524,6 +532,7 @@ class CreateEventViewModel(
      */
     fun deleteEvent() {
         val currentState = _uiState.value
+        val currentUserId = authRepository.currentUser?.uid
 
         if (!currentState.isEditMode || currentState.eventId.isBlank()) {
             viewModelScope.launch {
@@ -538,6 +547,12 @@ class CreateEventViewModel(
             try {
                 firestoreRepository.deleteDocument(CollectionNames.EVENTS, currentState.eventId)
                     .onSuccess {
+                        // Also remove creator's user_events entry
+                        if (currentUserId != null) {
+                            val userEventId = generateUserEventId(currentUserId, currentState.eventId)
+                            firestoreRepository.deleteDocument(CollectionNames.USER_EVENTS, userEventId)
+                        }
+
                         _uiState.update { it.copy(isDeleting = false) }
                         _events.emit(CreateEventEvent.DeleteSuccess)
                     }
@@ -550,6 +565,31 @@ class CreateEventViewModel(
                 _events.emit(CreateEventEvent.CreateError(e.message ?: "Failed to delete event"))
             }
         }
+    }
+
+    /**
+     * Add the creator to the user_events collection
+     */
+    private suspend fun addCreatorToUserEvents(event: Event, creatorId: String) {
+        val userEventId = generateUserEventId(creatorId, event.id)
+        val userEvent = UserEvent(
+            id = userEventId,
+            userId = creatorId,
+            eventId = event.id,
+            eventName = event.matchName,
+            sportType = event.sportType,
+            date = event.date,
+            time = event.time,
+            venueName = event.venue.name,
+            coverImageUrl = event.coverImageUrl,
+            isCreator = true,
+            joinedAt = currentTimeMillis()
+        )
+        firestoreRepository.setDocument(
+            CollectionNames.USER_EVENTS,
+            userEventId,
+            userEvent
+        )
     }
 
     private fun createEventFromState(

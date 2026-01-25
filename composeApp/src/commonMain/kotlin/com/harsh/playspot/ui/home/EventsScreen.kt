@@ -38,6 +38,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -57,6 +58,7 @@ import com.harsh.playspot.HandleSharedEvents
 import com.harsh.playspot.dao.Event
 import com.harsh.playspot.ui.core.BodyMedium
 import com.harsh.playspot.ui.core.BodySmall
+import com.harsh.playspot.ui.core.EmptyState
 import com.harsh.playspot.ui.core.LabelLarge
 import com.harsh.playspot.ui.core.LabelSmall
 import com.harsh.playspot.ui.core.Padding
@@ -72,7 +74,6 @@ import playspot.composeapp.generated.resources.events_add_event
 import playspot.composeapp.generated.resources.events_individual_training
 import playspot.composeapp.generated.resources.events_notifications
 import playspot.composeapp.generated.resources.events_see_all
-import playspot.composeapp.generated.resources.events_suggested_for_you
 import playspot.composeapp.generated.resources.events_tab_attending
 import playspot.composeapp.generated.resources.events_tab_organizing
 import playspot.composeapp.generated.resources.events_title
@@ -109,6 +110,8 @@ fun EventsScreen(
     openOrganizingEvents: Boolean,
     onCreateEventClick: () -> Unit = {},
     onEventClick: (String) -> Unit = {},
+    onEventDetailsClick: (String) -> Unit = {},
+    onExploreEventsClick: () -> Unit = {},
     viewModel: MyEventsViewModel = viewModel { MyEventsViewModel() }
 ) {
     HandleSharedEvents(viewModel)
@@ -150,69 +153,69 @@ fun EventsScreen(
             maxPlayers = 1
         )
     )
-    
+
     val isOrganizingTab = selectedTab == tabOrganizing
 
     Scaffold(topBar = {
         TopAppBar(
             title = {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                // Profile avatar with online indicator
-                Box {
-                    Box(
-                        modifier = Modifier.size(40.dp).clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f))
-                            .border(
-                                width = 2.dp,
-                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
-                                shape = CircleShape
-                            ), contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "AJ",
-                            style = MaterialTheme.typography.labelLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    // Profile avatar with online indicator
+                    Box {
+                        Box(
+                            modifier = Modifier.size(40.dp).clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f))
+                                .border(
+                                    width = 2.dp,
+                                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
+                                    shape = CircleShape
+                                ), contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "AJ",
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                        // Online indicator
+                        Box(
+                            modifier = Modifier.size(12.dp).align(Alignment.BottomEnd)
+                                .offset(x = 2.dp, y = 2.dp).clip(CircleShape)
+                                .background(Color(0xFF22C55E)).border(
+                                    width = 2.dp,
+                                    color = MaterialTheme.colorScheme.background,
+                                    shape = CircleShape
+                                )
                         )
                     }
-                    // Online indicator
-                    Box(
-                        modifier = Modifier.size(12.dp).align(Alignment.BottomEnd)
-                            .offset(x = 2.dp, y = 2.dp).clip(CircleShape)
-                            .background(Color(0xFF22C55E)).border(
-                                width = 2.dp,
-                                color = MaterialTheme.colorScheme.background,
-                                shape = CircleShape
-                            )
+                    TitleMedium(
+                        text = stringResource(Res.string.events_title),
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.extendedColors.textDark
                     )
                 }
-                TitleMedium(
-                    text = stringResource(Res.string.events_title),
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.extendedColors.textDark
-                )
-            }
-        }, actions = {
-            BadgedBox(
-                badge = {
-                    Badge(
-                        containerColor = Color(0xFFEF4444), modifier = Modifier.size(10.dp)
-                    )
-                }) {
-                IconButton(onClick = { }) {
-                    Icon(
-                        imageVector = Icons.Filled.Notifications,
-                        contentDescription = stringResource(Res.string.events_notifications),
-                        tint = MaterialTheme.colorScheme.outlineVariant
-                    )
+            }, actions = {
+                BadgedBox(
+                    badge = {
+                        Badge(
+                            containerColor = Color(0xFFEF4444), modifier = Modifier.size(10.dp)
+                        )
+                    }) {
+                    IconButton(onClick = { }) {
+                        Icon(
+                            imageVector = Icons.Filled.Notifications,
+                            contentDescription = stringResource(Res.string.events_notifications),
+                            tint = MaterialTheme.colorScheme.outlineVariant
+                        )
+                    }
                 }
-            }
-        }, colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = MaterialTheme.colorScheme.background
-        )
+            }, colors = TopAppBarDefaults.topAppBarColors(
+                containerColor = MaterialTheme.colorScheme.background
+            )
         )
     }, floatingActionButton = {
         FloatingActionButton(
@@ -229,101 +232,115 @@ fun EventsScreen(
             )
         }
     }) { paddingValues ->
-        LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(paddingValues),
-            contentPadding = PaddingValues(horizontal = Padding.padding16Dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+        PullToRefreshBox(
+            isRefreshing = eventsUiState.isLoading,
+            onRefresh = { viewModel.refreshEvents() },
+            modifier = Modifier.fillMaxSize().padding(paddingValues)
         ) {
-            // Tab Switcher
-            item {
-                TabSwitcher(
-                    tabs = listOf(tabAttending, tabOrganizing),
-                    selectedTab = selectedTab,
-                    onTabSelected = { selectedTab = it })
-            }
-
-            if (isOrganizingTab) {
-                // Organizing Tab Content - Show events created by the user
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(horizontal = Padding.padding16Dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // Tab Switcher
                 item {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        TitleMedium(
-                            text = "My Events",
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.extendedColors.textDark
-                        )
-                    }
+                    TabSwitcher(
+                        tabs = listOf(tabAttending, tabOrganizing),
+                        selectedTab = selectedTab,
+                        onTabSelected = { selectedTab = it })
                 }
 
-                if (eventsUiState.isLoading && eventsUiState.organizingEvents.isEmpty()) {
+                if (isOrganizingTab) {
+                    // Organizing Tab Content - Show events created by the user
                     item {
-                        Box(
-                            modifier = Modifier.fillMaxWidth().height(200.dp),
-                            contentAlignment = Alignment.Center
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                            TitleMedium(
+                                text = "My Events",
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.extendedColors.textDark
+                            )
                         }
                     }
-                } else if (eventsUiState.organizingEvents.isEmpty()) {
-                    item {
-                        EmptyOrganizingSection(onCreateEventClick = onCreateEventClick)
+
+                    if (eventsUiState.isLoading && eventsUiState.organizingEvents.isEmpty()) {
+                        item {
+                            Box(
+                                modifier = Modifier.fillMaxWidth().height(200.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                            }
+                        }
+                    } else if (eventsUiState.organizingEvents.isEmpty()) {
+                        item {
+                            EmptyState(
+                                title = "No events yet",
+                                description = "Start organizing your first sports event!",
+                                cta = "Create Event",
+                                onClick = onCreateEventClick
+                            )
+                        }
+                    } else {
+                        items(eventsUiState.organizingEvents) { match ->
+                            RecommendedMatchCard(
+                                match = match,
+                                horizontalPadding = 0.dp,
+                                onClick = { onEventClick(match.id) }
+                            )
+                        }
                     }
                 } else {
-                    items(eventsUiState.organizingEvents) { event ->
-                        OrganizedEventCard(
-                            event = event, onClick = { onEventClick(event.id) })
+                    // Attending Tab Content - Show user's participated events from USER_EVENTS collection
+
+                    // Upcoming Matches Header
+                    item {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            TitleMedium(
+                                text = stringResource(Res.string.events_upcoming_matches),
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.extendedColors.textDark
+                            )
+                            LabelLarge(
+                                text = stringResource(Res.string.events_see_all),
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+
+                    // Attending Event Cards using RecommendedMatchCard
+                    if (eventsUiState.attendingEvents.isEmpty() && !eventsUiState.isLoading) {
+                        item {
+                            EmptyState(
+                                title = "No events yet",
+                                description = "Join events from Explore to see them here",
+                                cta = "Explore events",
+                                onClick = onExploreEventsClick
+                            )
+                        }
+                    } else {
+                        items(eventsUiState.attendingEvents) { match ->
+                            RecommendedMatchCard(
+                                match = match,
+                                horizontalPadding = 0.dp,
+                                onClick = { onEventDetailsClick(match.id) }
+                            )
+                        }
                     }
                 }
-            } else {
-                // Attending Tab Content - Show sample events (existing behavior)
 
-                // Upcoming Matches Header
+                // Bottom spacing
                 item {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        TitleMedium(
-                            text = stringResource(Res.string.events_upcoming_matches),
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.extendedColors.textDark
-                        )
-                        LabelLarge(
-                            text = stringResource(Res.string.events_see_all),
-                            fontWeight = FontWeight.Medium,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
+                    Spacer(modifier = Modifier.height(80.dp))
                 }
-
-                // Event Cards
-                items(sampleEvents) { event ->
-                    EventCard(event = event)
-                }
-
-                // Suggested For You Header
-                item {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    TitleMedium(
-                        text = stringResource(Res.string.events_suggested_for_you),
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.extendedColors.textDark
-                    )
-                }
-
-                // Suggested Cards (Horizontal)
-                item {
-                    SuggestedSection()
-                }
-            }
-
-            // Bottom spacing
-            item {
-                Spacer(modifier = Modifier.height(80.dp))
             }
         }
     }
@@ -342,10 +359,11 @@ private fun TabSwitcher(
             val isSelected = selectedTab == tab
             Box(
                 modifier = Modifier.weight(1f).fillMaxSize().clip(RoundedCornerShape(8.dp))
-                .clickable { onTabSelected(tab) }.background(
-                    if (isSelected) MaterialTheme.extendedColors.widgetBg
-                    else Color.Transparent
-                ), contentAlignment = Alignment.Center) {
+                    .clickable { onTabSelected(tab) }.background(
+                        if (isSelected) MaterialTheme.extendedColors.widgetBg
+                        else Color.Transparent
+                    ), contentAlignment = Alignment.Center
+            ) {
                 LabelLarge(
                     text = tab,
                     fontWeight = FontWeight.Medium,
@@ -512,13 +530,13 @@ private fun SuggestedCard(title: String, distance: String) {
 
     Box(
         modifier = Modifier.width(256.dp).height(160.dp).clip(shape).background(
-                brush = androidx.compose.ui.graphics.Brush.verticalGradient(
-                    colors = listOf(
-                        MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
-                        MaterialTheme.colorScheme.primary
-                    )
+            brush = androidx.compose.ui.graphics.Brush.verticalGradient(
+                colors = listOf(
+                    MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
+                    MaterialTheme.colorScheme.primary
                 )
             )
+        )
     ) {
         // Content overlay
         Column(
@@ -581,18 +599,19 @@ private fun OrganizedEventCard(
 
     Row(
         modifier = Modifier.fillMaxWidth().clip(shape)
-        .background(MaterialTheme.extendedColors.widgetBg).border(
-            width = 1.dp, color = MaterialTheme.extendedColors.outline, shape = shape
-        ).clickable { onClick() }.padding(Padding.padding16Dp),
-        horizontalArrangement = Arrangement.SpaceBetween) {
+            .background(MaterialTheme.extendedColors.widgetBg).border(
+                width = 1.dp, color = MaterialTheme.extendedColors.outline, shape = shape
+            ).clickable { onClick() }.padding(Padding.padding16Dp),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
         Row(
             modifier = Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             // Sport Icon
             Box(
                 modifier = Modifier.size(48.dp).clip(RoundedCornerShape(12.dp)).background(
-                        (sportUi?.color ?: MaterialTheme.colorScheme.primary).copy(alpha = 0.1f)
-                    ), contentAlignment = Alignment.Center
+                    (sportUi?.color ?: MaterialTheme.colorScheme.primary).copy(alpha = 0.1f)
+                ), contentAlignment = Alignment.Center
             ) {
                 if (sportUi != null) {
                     Icon(
@@ -739,61 +758,6 @@ private fun OrganizedEventCard(
                         color = MaterialTheme.colorScheme.outlineVariant
                     )
                 }
-            }
-        }
-    }
-}
-
-@Composable
-private fun EmptyOrganizingSection(
-    onCreateEventClick: () -> Unit
-) {
-    Column(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 48.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        Box(
-            modifier = Modifier.size(80.dp).clip(CircleShape)
-                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = Icons.Filled.SportsScore,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(40.dp)
-            )
-        }
-
-        TitleMedium(
-            text = "No Events Yet",
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.extendedColors.textDark
-        )
-
-        BodyMedium(
-            text = "Start organizing your first sports event!",
-            color = MaterialTheme.colorScheme.outlineVariant
-        )
-
-        Box(
-            modifier = Modifier.clip(RoundedCornerShape(12.dp))
-            .background(MaterialTheme.colorScheme.primary).clickable { onCreateEventClick() }
-            .padding(horizontal = 24.dp, vertical = 12.dp)) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.Add,
-                    contentDescription = null,
-                    tint = Color.White,
-                    modifier = Modifier.size(20.dp)
-                )
-                LabelLarge(
-                    text = "Create Event", fontWeight = FontWeight.Bold, color = Color.White
-                )
             }
         }
     }

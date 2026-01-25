@@ -123,7 +123,11 @@ fun HomeScreenRoute(
                     0 -> EventsScreen(
                         openOrganizingEvents = openOrganizingEvents,
                         onCreateEventClick = onCreateEventClicked,
-                        onEventClick = onEditEventClicked
+                        onEventClick = onEditEventClicked,
+                        onEventDetailsClick = onEventClick,
+                        onExploreEventsClick = {
+                            selectedTabIndex = 1
+                        }
                     )
 
                     1 -> ExploreScreen(onEventClick = onEventClick)

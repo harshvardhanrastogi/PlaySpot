@@ -16,10 +16,13 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -48,10 +51,12 @@ import androidx.compose.material.icons.filled.SportsTennis
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -67,6 +72,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.harsh.playspot.ui.core.BodyMedium
@@ -106,7 +112,8 @@ data class RecommendedMatch(
     val attendees: Int = 0,
     val maxAttendees: Int = 0,
     val tags: List<String> = emptyList(),
-    val coverImageUrl: String = ""
+    val coverImageUrl: String = "",
+    val participantAvatars: List<String> = emptyList() // Optimized avatar URLs for participants
 )
 
 sealed class MatchStatus {
@@ -133,14 +140,17 @@ fun ExploreScreen(
     ExploreScreenContent(
         recommendedMatches = uiState.recommendedMatches,
         isLoading = uiState.isLoading,
+        onRefresh = viewModel::loadEvents,
         onEventClick = onEventClick
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ExploreScreenContent(
     recommendedMatches: List<RecommendedMatch>,
     isLoading: Boolean = false,
+    onRefresh: () -> Unit = {},
     onEventClick: (String) -> Unit = {}
 ) {
     var searchQuery by remember { mutableStateOf("") }
@@ -188,12 +198,17 @@ private fun ExploreScreenContent(
         )
     )
     
-    LazyColumn(
+    PullToRefreshBox(
+        isRefreshing = isLoading,
+        onRefresh = onRefresh,
         modifier = Modifier
             .statusBarsPadding()
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize()
+        ) {
         // Header
         item {
             ExploreHeader()
@@ -243,9 +258,10 @@ private fun ExploreScreenContent(
             )
         }
         
-        // Bottom spacing
-        item {
-            Spacer(modifier = Modifier.height(100.dp))
+            // Bottom spacing
+            item {
+                Spacer(modifier = Modifier.height(100.dp))
+            }
         }
     }
 }
@@ -760,8 +776,9 @@ private fun RecommendedHeader() {
 }
 
 @Composable
-private fun RecommendedMatchCard(
+fun RecommendedMatchCard(
     match: RecommendedMatch,
+    horizontalPadding: Dp = Padding.padding16Dp,
     onClick: () -> Unit = {}
 ) {
     val shape = RoundedCornerShape(24.dp)
@@ -769,7 +786,7 @@ private fun RecommendedMatchCard(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = Padding.padding16Dp)
+            .padding(horizontal = horizontalPadding)
             .padding(bottom = 12.dp)
             .clip(shape)
             .background(MaterialTheme.extendedColors.widgetBg)
@@ -822,7 +839,7 @@ private fun RecommendedMatchCard(
         Column(
             modifier = Modifier
                 .weight(1f)
-                .height(112.dp),
+                .heightIn(min = 112.dp),
             verticalArrangement = Arrangement.SpaceBetween
         ) {
             Column {
@@ -911,51 +928,28 @@ private fun RecommendedMatchCard(
                 }
             }
             
-            // Bottom row: tags or avatars + status
+            // Bottom row: avatars + status
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                if (match.tags.isNotEmpty()) {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        match.tags.forEach { tag ->
-                            Box(
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(4.dp))
-                                    .background(MaterialTheme.extendedColors.widgetBg)
-                                    .border(
-                                        width = 1.dp,
-                                        color = MaterialTheme.extendedColors.outline,
-                                        shape = RoundedCornerShape(4.dp)
-                                    )
-                                    .padding(horizontal = 6.dp, vertical = 2.dp)
-                            ) {
-                                LabelSmall(
-                                    text = tag,
-                                    color = MaterialTheme.colorScheme.outlineVariant,
-                                    fontSize = 10.sp
-                                )
-                            }
-                        }
-                    }
-                } else if (match.attendees > 0) {
-                    // Avatar stack placeholder
+                // Avatar stack with actual participant images
+                if (match.attendees > 0 || match.participantAvatars.isNotEmpty()) {
+                    val fallbackColors = listOf(Color(0xFF3B82F6), Color(0xFFF97316), Color(0xFF22C55E), Color(0xFF8B5CF6))
+                    // Use max of attendees count or actual avatars available
+                    val avatarCount = maxOf(match.attendees, match.participantAvatars.size)
                     Row {
-                        repeat(minOf(2, match.attendees)) { index ->
+                        // Show up to 3 avatars
+                        val avatarsToShow = minOf(3, avatarCount)
+                        repeat(avatarsToShow) { index ->
+                            val avatarUrl = match.participantAvatars.getOrNull(index)
                             Box(
                                 modifier = Modifier
+                                    .offset(x = (-6 * index).dp)
                                     .size(24.dp)
-                                    .padding(start = if (index > 0) 0.dp else 0.dp)
                                     .clip(CircleShape)
-                                    .background(
-                                        listOf(
-                                            Color(0xFF3B82F6),
-                                            Color(0xFFF97316)
-                                        )[index % 2]
-                                    )
+                                    .background(fallbackColors[index % fallbackColors.size])
                                     .border(
                                         width = 2.dp,
                                         color = MaterialTheme.extendedColors.widgetBg,
@@ -963,17 +957,29 @@ private fun RecommendedMatchCard(
                                     ),
                                 contentAlignment = Alignment.Center
                             ) {
-                                LabelSmall(
-                                    text = listOf("A", "B")[index % 2],
-                                    color = Color.White,
-                                    fontSize = 10.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
+                                if (!avatarUrl.isNullOrBlank()) {
+                                    AsyncImage(
+                                        model = avatarUrl,
+                                        contentDescription = "Participant",
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentScale = ContentScale.Crop
+                                    )
+                                } else {
+                                    // Fallback to initials
+                                    LabelSmall(
+                                        text = listOf("A", "B", "C", "D")[index % 4],
+                                        color = Color.White,
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
                             }
                         }
-                        if (match.attendees > 2) {
+                        // Show +N if more than 3 attendees
+                        if (avatarCount > 3) {
                             Box(
                                 modifier = Modifier
+                                    .offset(x = (-18).dp)
                                     .size(24.dp)
                                     .clip(CircleShape)
                                     .background(MaterialTheme.extendedColors.widgetBg)
@@ -985,7 +991,7 @@ private fun RecommendedMatchCard(
                                 contentAlignment = Alignment.Center
                             ) {
                                 LabelSmall(
-                                    text = "+${match.attendees - 2}",
+                                    text = "+${avatarCount - 3}",
                                     color = MaterialTheme.colorScheme.outlineVariant,
                                     fontSize = 8.sp,
                                     fontWeight = FontWeight.Bold
@@ -1129,16 +1135,72 @@ fun ExploreScreenPreview() {
 @Preview(showBackground = true)
 @Composable
 fun RecommendedMatchCardPreview() {
-    RecommendedMatchCard(RecommendedMatch(
-        id = "1",
-        title = "Morning Tennis Doubles",
-        sport = "Tennis",
-        sportColor = Color(0xFF3B82F6),
-        date = "Tomorrow • 6:30 AM",
-        location = "Mission Bay Courts",
-        distance = "0.5mi",
-        tag = "Friendly",
-        status = MatchStatus.NeedPlayer("Need 1 player"),
-        attendees = 3
-    ))
+    Column(
+        modifier = Modifier.background(Color(0xFFF5F5F5)),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        // With cover image placeholder, spots left
+        RecommendedMatchCard(
+            match = RecommendedMatch(
+                id = "1",
+                title = "Morning Tennis Doubles",
+                sport = "Tennis",
+                sportColor = Color(0xFF3B82F6),
+                date = "Tomorrow • 6:30 AM",
+                location = "Mission Bay Courts",
+                distance = "0.5mi",
+                tag = "Intermediate",
+                tagIsPrimary = false,
+                status = MatchStatus.SpotsLeft(2),
+                attendees = 6,
+                maxAttendees = 8,
+                tags = listOf("Intermediate"),
+                coverImageUrl = ""
+            ),
+            onClick = {}
+        )
+
+        // Full match
+        RecommendedMatchCard(
+            match = RecommendedMatch(
+                id = "2",
+                title = "5-a-side Football",
+                sport = "Football",
+                sportColor = Color(0xFF22C55E),
+                date = "Sat, Oct 26 • 4:00 PM",
+                location = "Downtown Arena",
+                distance = "1.2mi",
+                tag = "Advanced",
+                tagIsPrimary = false,
+                status = MatchStatus.Full,
+                attendees = 10,
+                maxAttendees = 10,
+                tags = listOf("Advanced"),
+                coverImageUrl = ""
+            ),
+            onClick = {}
+        )
+
+        // Organizing tag (creator)
+        RecommendedMatchCard(
+            match = RecommendedMatch(
+                id = "3",
+                title = "Basketball Pickup " +
+                        "\nGame",
+                sport = "Basketball",
+                sportColor = Color(0xFFF97316),
+                date = "Sun, Oct 27 • 10:00 AM",
+                location = "Central Park Courts",
+                distance = "0.8mi",
+                tag = "Organizing",
+                tagIsPrimary = true,
+                status = MatchStatus.Attending(4, 10),
+                attendees = 4,
+                maxAttendees = 10,
+                tags = listOf("Beginner"),
+                coverImageUrl = ""
+            ),
+            onClick = {}
+        )
+    }
 }

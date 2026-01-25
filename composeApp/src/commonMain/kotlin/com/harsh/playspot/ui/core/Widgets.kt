@@ -18,18 +18,21 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.automirrored.filled.DirectionsBike
 import androidx.compose.material.icons.automirrored.filled.DirectionsRun
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.PhotoCamera
@@ -39,6 +42,7 @@ import androidx.compose.material.icons.filled.SportsBaseball
 import androidx.compose.material.icons.filled.SportsBasketball
 import androidx.compose.material.icons.filled.SportsCricket
 import androidx.compose.material.icons.filled.SportsGolf
+import androidx.compose.material.icons.filled.SportsScore
 import androidx.compose.material.icons.filled.SportsSoccer
 import androidx.compose.material.icons.filled.SportsTennis
 import androidx.compose.material.icons.filled.SportsVolleyball
@@ -181,7 +185,7 @@ fun DangerButton(
 ) {
     val hapticFeedback = LocalHapticFeedback.current
     val dangerColor = MaterialTheme.extendedColors.red
-    
+
     Button(
         onClick = {
             hapticFeedback.performHapticFeedback(HapticFeedbackType.Confirm)
@@ -281,7 +285,7 @@ fun TextField(
             visualTransformation = visualTransformation,
             shape = shape,
             supportingText = if (errorText != null) {
-                { LabelSmall(text = errorText, color = MaterialTheme.colorScheme.error,) }
+                { LabelSmall(text = errorText, color = MaterialTheme.colorScheme.error) }
             } else null
         )
     }
@@ -1004,6 +1008,91 @@ fun Modifier.clickWithFeedback(
     }
 }
 
+@Composable
+fun EmptyState(
+    title: String,
+    description: String,
+    cta: String,
+    onClick: () -> Unit
+) {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            modifier = Modifier.padding(32.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(80.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.SportsScore,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(40.dp)
+                )
+            }
+
+            TitleMedium(
+                text = title,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.extendedColors.textDark
+            )
+
+            BodyMedium(
+                text = description,
+                color = MaterialTheme.colorScheme.outlineVariant,
+                textAlign = TextAlign.Center
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(MaterialTheme.colorScheme.primary)
+                    .clickable { onClick() }
+                    .padding(horizontal = 24.dp, vertical = 12.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Add,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    LabelLarge(
+                        text = cta,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Preview(showBackground = true, backgroundColor = 0xE6E6E6)
+@Composable
+fun PreviewEmptyState() {
+    AppTheme(darkTheme = true) {
+        EmptyState(
+            "No Events Yet",
+            "Start organizing your first sports event!\nBring people together for a great game.",
+            "Create Event",
+            onClick = {})
+    }
+}
+
 
 @Preview(backgroundColor = 0x666666, showBackground = true)
 @Composable
@@ -1070,7 +1159,7 @@ object SportColors {
     val Golf = Color(0xFF84CC16)
     val Yoga = Color(0xFFE50833)
     val Default = Color(0xFF3B82F6)
-    
+
     private val colorMap = mapOf(
         "Football" to Football,
         "Basketball" to Basketball,
@@ -1088,7 +1177,7 @@ object SportColors {
         "Soccer" to Football, // Alias
         "Table Tennis" to Badminton // Similar color
     )
-    
+
     fun getColor(sportType: String): Color = colorMap[sportType] ?: Default
 }
 
@@ -1098,15 +1187,35 @@ data class SportUi(val name: String, val color: Color, val icon: ImageVector)
 fun getSportsMap() =
     mapOf(
         "Football" to SportUi("Football", SportColors.Football, Icons.Filled.SportsSoccer),
-        "Basketball" to SportUi("Basketball", SportColors.Basketball, Icons.Filled.SportsBasketball),
+        "Basketball" to SportUi(
+            "Basketball",
+            SportColors.Basketball,
+            Icons.Filled.SportsBasketball
+        ),
         "Tennis" to SportUi("Tennis", SportColors.Tennis, Icons.Filled.SportsTennis),
-        "Running" to SportUi("Running", SportColors.Running, Icons.AutoMirrored.Filled.DirectionsRun),
-        "Volleyball" to SportUi("Volleyball", SportColors.Volleyball, Icons.Filled.SportsVolleyball),
+        "Running" to SportUi(
+            "Running",
+            SportColors.Running,
+            Icons.AutoMirrored.Filled.DirectionsRun
+        ),
+        "Volleyball" to SportUi(
+            "Volleyball",
+            SportColors.Volleyball,
+            Icons.Filled.SportsVolleyball
+        ),
         "Swimming" to SportUi("Swimming", SportColors.Swimming, Icons.Filled.Pool),
-        "Cycling" to SportUi("Cycling", SportColors.Cycling, Icons.AutoMirrored.Filled.DirectionsBike),
+        "Cycling" to SportUi(
+            "Cycling",
+            SportColors.Cycling,
+            Icons.AutoMirrored.Filled.DirectionsBike
+        ),
         "Cricket" to SportUi("Cricket", SportColors.Cricket, Icons.Filled.SportsCricket),
         "Baseball" to SportUi("Baseball", SportColors.Baseball, Icons.Filled.SportsBaseball),
-        "Badminton" to SportUi("Badminton", SportColors.Badminton, vectorResource(Res.drawable.ic_badminton)),
+        "Badminton" to SportUi(
+            "Badminton",
+            SportColors.Badminton,
+            vectorResource(Res.drawable.ic_badminton)
+        ),
         "Gym" to SportUi("Gym", SportColors.Gym, Icons.Filled.FitnessCenter),
         "Golf" to SportUi("Golf", SportColors.Golf, Icons.Filled.SportsGolf),
         "Yoga" to SportUi("Yoga", SportColors.Yoga, Icons.Filled.SelfImprovement)

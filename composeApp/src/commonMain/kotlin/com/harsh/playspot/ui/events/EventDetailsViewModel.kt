@@ -2,8 +2,11 @@ package com.harsh.playspot.ui.events
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.harsh.playspot.currentTimeMillis
 import com.harsh.playspot.dao.Event
 import com.harsh.playspot.dao.Participant
+import com.harsh.playspot.dao.UserEvent
+import com.harsh.playspot.dao.generateUserEventId
 import com.harsh.playspot.data.auth.AuthRepository
 import com.harsh.playspot.data.firestore.CollectionNames
 import com.harsh.playspot.data.firestore.FirestoreRepository
@@ -148,6 +151,27 @@ class EventDetailsViewModel(
 
             firestoreRepository.updateDocument(CollectionNames.EVENTS, eventId, updates)
                 .onSuccess {
+                    // Also add to user_events collection for efficient querying
+                    val userEventId = generateUserEventId(currentUser.uid, eventId)
+                    val userEvent = UserEvent(
+                        id = userEventId,
+                        userId = currentUser.uid,
+                        eventId = eventId,
+                        eventName = event.matchName,
+                        sportType = event.sportType,
+                        date = event.date,
+                        time = event.time,
+                        venueName = event.venue.name,
+                        coverImageUrl = event.coverImageUrl,
+                        isCreator = false,
+                        joinedAt = currentTimeMillis()
+                    )
+                    firestoreRepository.setDocument(
+                        CollectionNames.USER_EVENTS,
+                        userEventId,
+                        userEvent
+                    )
+
                     _uiState.update { it.copy(isJoining = false) }
                     _events.emit(EventDetailsEvent.JoinSuccess)
                     loadEvent() // Refresh data
@@ -178,6 +202,10 @@ class EventDetailsViewModel(
 
             firestoreRepository.updateDocument(CollectionNames.EVENTS, eventId, updates)
                 .onSuccess {
+                    // Also remove from user_events collection
+                    val userEventId = generateUserEventId(userId, eventId)
+                    firestoreRepository.deleteDocument(CollectionNames.USER_EVENTS, userEventId)
+
                     _uiState.update { it.copy(isLeaving = false) }
                     _events.emit(EventDetailsEvent.LeaveSuccess)
                     loadEvent() // Refresh data
