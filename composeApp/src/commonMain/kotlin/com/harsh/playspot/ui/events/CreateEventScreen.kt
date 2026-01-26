@@ -2,7 +2,6 @@ package com.harsh.playspot.ui.events
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import coil3.compose.AsyncImage
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -20,19 +19,19 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AddAPhoto
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.EditCalendar
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.SportsSoccer
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenu
@@ -67,16 +66,21 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil3.compose.AsyncImage
 import com.harsh.playspot.SharedEvent
 import com.harsh.playspot.SharedEventHandler
 import com.harsh.playspot.ui.core.AppTheme
+import com.harsh.playspot.ui.core.BodyLarge
 import com.harsh.playspot.ui.core.BodyMedium
 import com.harsh.playspot.ui.core.BodySmall
 import com.harsh.playspot.ui.core.LabelLarge
+import com.harsh.playspot.ui.core.LabelSmall
 import com.harsh.playspot.ui.core.LargeButton
 import com.harsh.playspot.ui.core.Padding
 import com.harsh.playspot.ui.core.TitleMedium
@@ -88,6 +92,9 @@ import com.preat.peekaboo.image.picker.SelectionMode
 import com.preat.peekaboo.image.picker.rememberImagePickerLauncher
 import com.preat.peekaboo.image.picker.toImageBitmap
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.datetime.Instant
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
@@ -99,8 +106,8 @@ fun CreateEventScreenRoute(
     onBackPressed: () -> Unit,
     onEventCreated: () -> Unit,
     eventId: String? = null,
-    viewModel: CreateEventViewModel = viewModel(key = eventId ?: "create") { 
-        CreateEventViewModel(eventIdToEdit = eventId) 
+    viewModel: CreateEventViewModel = viewModel(key = eventId ?: "create") {
+        CreateEventViewModel(eventIdToEdit = eventId)
     }
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -127,14 +134,17 @@ fun CreateEventScreenRoute(
                     onEventCreated()
                     SharedEventHandler.sendEvent(SharedEvent.EventCreated)
                 }
+
                 is CreateEventEvent.UpdateSuccess -> {
                     onEventCreated()
                     SharedEventHandler.sendEvent(SharedEvent.EventCreated)
                 }
+
                 is CreateEventEvent.DeleteSuccess -> {
                     onEventCreated()
                     SharedEventHandler.sendEvent(SharedEvent.EventCreated)
                 }
+
                 is CreateEventEvent.CreateError -> snackbarHostState.showSnackbar(event.message)
                 is CreateEventEvent.SaveDraftSuccess -> snackbarHostState.showSnackbar("Draft saved")
             }
@@ -302,7 +312,8 @@ private fun CreateEventScreen(
                         onValueChange = onMatchNameChange,
                         placeholder = "e.g. Saturday Morning 5v5",
                         isLarge = true,
-                        isError = uiState.matchNameError != null
+                        isError = uiState.matchNameError != null,
+                        maxCount = 30
                     )
                     if (uiState.matchNameError != null) {
                         BodySmall(
@@ -476,7 +487,7 @@ private fun CoverPhotoSection(
                     contentScale = ContentScale.Crop,
                     alpha = 0.25f
                 )
-                
+
                 // Overlay with add photo prompt
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -504,7 +515,7 @@ private fun CoverPhotoSection(
                 }
             }
         }
-        
+
         // Edit button overlay (show when any image exists)
         if (hasImage) {
             Box(
@@ -557,10 +568,11 @@ private fun StyledTextField(
     placeholder: String,
     isLarge: Boolean = false,
     isError: Boolean = false,
-    keyboardType: KeyboardType = KeyboardType.Text
+    keyboardType: KeyboardType = KeyboardType.Text,
+    maxCount : Int
 ) {
     val shape = RoundedCornerShape(16.dp)
-
+    val count = maxCount - value.count()
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -575,20 +587,37 @@ private fun StyledTextField(
     ) {
         BasicTextField(
             value = value,
-            onValueChange = onValueChange,
+            onValueChange = {
+                if (count > 0 || it.count() < value.count()) {
+                    onValueChange(it)
+                } else {
+                    onValueChange(it.take(maxCount))
+                }
+            },
+            singleLine = true,
             textStyle = TextStyle(
                 fontSize = if (isLarge) 18.sp else 16.sp,
                 fontWeight = if (isLarge) FontWeight.SemiBold else FontWeight.Normal,
                 color = MaterialTheme.extendedColors.textDark
             ),
             keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
+            keyboardActions = KeyboardActions(
+                onDone = {
+                    // This hides the keyboard when Done is pressed
+                    defaultKeyboardAction(ImeAction.Done)
+                }
+            ),
             modifier = Modifier.fillMaxWidth(),
             decorationBox = { innerTextField ->
                 if (value.isEmpty()) {
-                    Text(
+                    BodyLarge(
                         text = placeholder,
-                        fontSize = if (isLarge) 18.sp else 16.sp,
-                        fontWeight = if (isLarge) FontWeight.SemiBold else FontWeight.Normal,
+                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.7f)
+                    )
+                }
+                if (value.isNotEmpty()) {
+                    LabelSmall(
+                        text = "$count", textAlign = TextAlign.End,
                         color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.7f)
                     )
                 }
@@ -685,7 +714,8 @@ private fun TimePickerField(
             onConfirm = {
                 val hour = timePickerState.hour
                 val minute = timePickerState.minute
-                val formattedTime = "${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}"
+                val formattedTime =
+                    "${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}"
                 onTimeSelected(formattedTime)
                 showTimePicker = false
             }
@@ -882,6 +912,11 @@ private fun PlayerLimitInput(
                 color = MaterialTheme.extendedColors.textDark
             ),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            keyboardActions = KeyboardActions(
+                onDone = {
+                    defaultKeyboardAction(ImeAction.Done)
+                }
+            ),
             modifier = Modifier.weight(1f),
             decorationBox = { innerTextField ->
                 if (value.isEmpty()) {
@@ -1047,6 +1082,12 @@ private fun DescriptionTextField(
                 fontSize = 16.sp,
                 color = MaterialTheme.extendedColors.textDark
             ),
+            keyboardActions = KeyboardActions(
+                onDone = {
+                    defaultKeyboardAction(ImeAction.Done)
+                }
+            ),
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
             modifier = Modifier.fillMaxSize(),
             decorationBox = { innerTextField ->
                 if (value.isEmpty()) {
@@ -1125,12 +1166,12 @@ private fun DeleteConfirmationDialog(
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.extendedColors.textDark
             )
-            
+
             BodyMedium(
                 text = "Are you sure you want to delete this event? This action cannot be undone.",
                 color = MaterialTheme.colorScheme.outlineVariant
             )
-            
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -1150,7 +1191,7 @@ private fun DeleteConfirmationDialog(
                         color = MaterialTheme.extendedColors.textDark
                     )
                 }
-                
+
                 Box(
                     modifier = Modifier
                         .weight(1f)
@@ -1172,34 +1213,22 @@ private fun DeleteConfirmationDialog(
 }
 
 private fun formatDateFromMillis(millis: Long): String {
-    val months = listOf("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
-    // Calculate date components from milliseconds
-    val totalDays = (millis / (1000L * 60 * 60 * 24)).toInt() + 719528 // Days since year 0
-    var year = (totalDays * 400L / 146097).toInt()
-    var dayOfYear = totalDays - (365 * year + year / 4 - year / 100 + year / 400)
-    
-    while (dayOfYear < 0) {
-        year--
-        val isLeap = (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0)
-        dayOfYear += if (isLeap) 366 else 365
-    }
-    
-    val isLeap = (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0)
-    val daysInMonths = if (isLeap) {
-        intArrayOf(31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)
-    } else {
-        intArrayOf(31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)
-    }
-    
-    var month = 0
-    var remainingDays = dayOfYear
-    while (month < 12 && remainingDays >= daysInMonths[month]) {
-        remainingDays -= daysInMonths[month]
-        month++
-    }
-    val day = remainingDays + 1
-    
-    return "$day ${months[month]} $year"
+    if (millis == 0L) return ""
+
+    val months =
+        listOf("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+
+    // Convert millis to an Instant
+    val instant = Instant.fromEpochMilliseconds(millis)
+
+    // Convert Instant to LocalDateTime using the system timezone
+    val dateTime = instant.toLocalDateTime(TimeZone.currentSystemDefault())
+
+    val day = dateTime.dayOfMonth
+    val month = months[dateTime.monthNumber - 1] // monthNumber is 1-12
+    val year = dateTime.year
+
+    return "$day $month $year"
 }
 
 @Preview

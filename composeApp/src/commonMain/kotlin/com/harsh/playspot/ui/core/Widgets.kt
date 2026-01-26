@@ -568,7 +568,7 @@ fun TitleSmall(
 
 @Composable
 fun BodyLarge(
-    modifier: Modifier,
+    modifier: Modifier = Modifier,
     text: String,
     color: Color = MaterialTheme.extendedColors.textDark,
     textAlign: TextAlign = TextAlign.Unspecified,
