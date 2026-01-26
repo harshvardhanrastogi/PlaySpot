@@ -60,6 +60,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
 import com.harsh.playspot.dao.Event
+import com.harsh.playspot.shareText
 import com.harsh.playspot.ui.core.AppTheme
 import com.harsh.playspot.ui.core.BodyMedium
 import com.harsh.playspot.ui.core.BodySmall
@@ -107,10 +108,35 @@ fun EventDetailsScreenRoute(
         onJoinClick = viewModel::joinEvent,
         onLeaveClick = viewModel::leaveEvent,
         onFavoriteClick = { /* TODO */ },
-        onShareClick = { /* TODO */ },
+        onShareClick = {
+            uiState.event?.let { event ->
+                shareEvent(event)
+            }
+        },
         onOpenMapClick = { /* TODO */ },
         onHostChatClick = { /* TODO */ }
     )
+}
+
+/**
+ * Share event as a deeplink
+ */
+private fun shareEvent(event: Event) {
+    val deepLink = "playspot://event/${event.id}"
+    val shareContent = buildString {
+        appendLine("Join me for ${event.matchName}!")
+        appendLine()
+        appendLine("${event.sportType} • ${event.date} ${event.time}")
+        if (event.venue.name.isNotBlank()) {
+            appendLine("📍 ${event.venue.name}")
+        }
+        if (event.playerLimit > 0) {
+            appendLine("👥 ${event.currentPlayers}/${event.playerLimit} players")
+        }
+        appendLine()
+        appendLine(deepLink)
+    }
+    shareText(shareContent, "Share Event")
 }
 
 @Composable

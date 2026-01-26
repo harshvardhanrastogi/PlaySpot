@@ -6,6 +6,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -18,12 +19,35 @@ import com.harsh.playspot.ui.profile.PersonalDetailsScreenRoute
 import com.harsh.playspot.ui.signup.PreferenceSetupCompleteRoute
 import com.harsh.playspot.ui.signup.PreferenceSetupRoute
 import com.harsh.playspot.ui.signup.SignupScreenRoute
+import com.harsh.playspot.util.DeepLinkHandler
 import kotlinx.serialization.Serializable
 
 @Composable
-fun NavigationRoutes(hasUserSession: Boolean, onBackPressed: () -> Unit) {
+fun NavigationRoutes(
+    hasUserSession: Boolean,
+    deepLinkUri: String? = null,
+    onDeepLinkHandled: () -> Unit = {},
+    onBackPressed: () -> Unit
+) {
     val navController = rememberNavController()
     val startScreen = if (hasUserSession) "Route.Home" else "Route.Login"
+    
+    // Handle deeplink from Android (passed as parameter)
+    LaunchedEffect(deepLinkUri) {
+        deepLinkUri?.let { uri ->
+            handleDeepLinkNavigation(uri, hasUserSession, navController)
+            onDeepLinkHandled()
+        }
+    }
+    
+    // Handle deeplink from iOS (via shared DeepLinkHandler)
+    val pendingDeepLink by DeepLinkHandler.pendingDeepLink.collectAsState()
+    LaunchedEffect(pendingDeepLink) {
+        pendingDeepLink?.let { uri ->
+            handleDeepLinkNavigation(uri, hasUserSession, navController)
+            DeepLinkHandler.consumeDeepLink()
+        }
+    }
     NavHost(navController = navController, startDestination = startScreen, enterTransition = {
         slideIntoContainer(
             towards = AnimatedContentTransitionScope.SlideDirection.Left,
@@ -198,4 +222,21 @@ sealed class Route {
     data object SignUp : Route()
 
     data object SportPreference : Route()
+}
+
+/**
+ * Handle deeplink navigation to event details
+ */
+private fun handleDeepLinkNavigation(
+    uri: String,
+    hasUserSession: Boolean,
+    navController: NavController
+) {
+    val eventId = DeepLinkHandler.parseEventId(uri)
+    if (eventId != null && hasUserSession) {
+        // Navigate to event details
+        navController.navigate("Route.EventDetails/$eventId") {
+            launchSingleTop = true
+        }
+    }
 }

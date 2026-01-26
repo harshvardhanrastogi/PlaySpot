@@ -23,3 +23,10 @@ expect fun currentTimeMillis(): Long
  * Generate a unique ID (UUID-like string)
  */
 expect fun generateUniqueId(): String
+
+/**
+ * Share text content using the platform's native share sheet
+ * @param text The text content to share
+ * @param title Optional title for the share sheet
+ */
+expect fun shareText(text: String, title: String = "")

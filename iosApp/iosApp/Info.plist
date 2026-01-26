@@ -17,5 +17,18 @@
 		<key>NSAllowsArbitraryLoads</key>
 		<true/>
 	</dict>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>com.harsh.playspot</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>playspot</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>
