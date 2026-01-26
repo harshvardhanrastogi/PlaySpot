@@ -23,6 +23,12 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.LocalTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.format.DateTimeFormat
+import kotlinx.datetime.toInstant
 
 data class CreateEventUiState(
     val coverImageBytes: ByteArray? = null,
@@ -32,6 +38,7 @@ data class CreateEventUiState(
     val sportType: String = "",
     val date: String = "",
     val time: String = "",
+    val eventStartTimeStamp: Long = 0L,
     val playerLimit: String = "",
     // Venue details
     val venueName: String = "",
@@ -70,6 +77,7 @@ data class CreateEventUiState(
                 sportType == other.sportType &&
                 date == other.date &&
                 time == other.time &&
+                eventStartTimeStamp == other.eventStartTimeStamp &&
                 playerLimit == other.playerLimit &&
                 venueName == other.venueName &&
                 venueAddress == other.venueAddress &&
@@ -97,6 +105,7 @@ data class CreateEventUiState(
         result = 31 * result + sportType.hashCode()
         result = 31 * result + date.hashCode()
         result = 31 * result + time.hashCode()
+        result = 31 * result + eventStartTimeStamp.hashCode()
         result = 31 * result + playerLimit.hashCode()
         result = 31 * result + venueName.hashCode()
         result = 31 * result + venueAddress.hashCode()
@@ -617,6 +626,7 @@ class CreateEventViewModel(
             sportType = state.sportType,
             date = state.date,
             time = state.time,
+            eventStartTimeStamp = convertDateTimeToTimestamp(state.date, state.time),
             playerLimit = state.playerLimit.toIntOrNull() ?: 0,
             currentPlayers = 1, // Creator is the first player
             description = state.description.trim(),
@@ -636,5 +646,56 @@ class CreateEventViewModel(
             updatedAt = currentTimeMillis,
             coverImageUrl = state.coverImageUrl
         )
+    }
+
+    /**
+     * Converts date string (yyyy-MM-dd) and time string (HH:mm)
+     * into a Unix Timestamp in milliseconds.
+     */
+
+    fun convertDateTimeToTimestamp(dateStr: String, timeStr: String): Long {
+        if (dateStr.isBlank() || timeStr.isBlank()) return 0L
+
+        return try {
+            // 1. Convert "dd MMM yyyy" to "yyyy-MM-dd"
+            // Example: "25 Oct 2023" -> ["25", "Oct", "2023"]
+            val parts = dateStr.split(" ")
+            if (parts.size < 3) return 0L
+
+            val day = parts[0].padStart(2, '0')
+            val monthStr = parts[1]
+            val year = parts[2]
+
+            val month = when (monthStr.take(3).lowercase()) {
+                "jan" -> "01"
+                "feb" -> "02"
+                "mar" -> "03"
+                "apr" -> "04"
+                "may" -> "05"
+                "jun" -> "06"
+                "jul" -> "07"
+                "aug" -> "08"
+                "sep" -> "09"
+                "oct" -> "10"
+                "nov" -> "11"
+                "dec" -> "12"
+                else -> "01"
+            }
+
+            val isoDate = "$year-$month-$day"
+
+            // 2. Parse the formatted ISO date
+            val date = LocalDate.parse(isoDate)
+
+            // 3. Parse the time (Expected format: "14:30")
+            val time = LocalTime.parse(timeStr)
+
+            // 4. Combine and convert to Instant
+            val localDateTime = LocalDateTime(date, time)
+            localDateTime.toInstant(TimeZone.currentSystemDefault()).toEpochMilliseconds()
+        } catch (e: Exception) {
+            // Log for debugging if necessary
+            0L
+        }
     }
 }

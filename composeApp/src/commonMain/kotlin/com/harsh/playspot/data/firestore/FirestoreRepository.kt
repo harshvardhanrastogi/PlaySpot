@@ -128,6 +128,26 @@ class FirestoreRepository {
             .map { it.data<T>() }
     }
 
+    /**
+     * Highly flexible query allowing multiple operators (equalTo, greaterThan, etc.)
+     */
+    suspend inline fun <reified T> queryDocuments(
+        collection: String,
+        field: String,
+        value: Any,
+        field2: String,
+        value2: Any
+    ): Result<List<T>> = runCatching {
+        firestore.collection(collection)
+            .where {
+                field equalTo value
+                field2 greaterThan value2
+            }
+            .get()
+            .documents
+            .map { it.data<T>() }
+    }
+
     companion object {
         val instance: FirestoreRepository by lazy { FirestoreRepository() }
     }

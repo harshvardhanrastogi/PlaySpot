@@ -22,6 +22,7 @@ data class Event(
     val sportType: String = "",
     val date: String = "",
     val time: String = "",
+    val eventStartTimeStamp: Long = 0L,
     val playerLimit: Int = 0,
     val currentPlayers: Int = 1, // Creator is first player
     val description: String = "",

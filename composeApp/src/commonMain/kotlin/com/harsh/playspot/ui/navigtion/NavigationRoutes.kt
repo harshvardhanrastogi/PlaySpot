@@ -11,7 +11,6 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.harsh.playspot.ui.events.CreateEventScreenRoute
 import com.harsh.playspot.ui.events.EventDetailsScreenRoute
-import com.harsh.playspot.ui.events.MyEventsScreenRoute
 import com.harsh.playspot.ui.home.HomeScreenRoute
 import com.harsh.playspot.ui.login.LoginScreenRoute
 import com.harsh.playspot.ui.profile.AddProfilePictureScreenRoute

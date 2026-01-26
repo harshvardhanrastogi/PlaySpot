@@ -3,6 +3,7 @@ package com.harsh.playspot.ui.events
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.harsh.playspot.currentTimeMillis
 import com.harsh.playspot.dao.Event
 import com.harsh.playspot.dao.UserEvent
 import com.harsh.playspot.data.auth.AuthRepository
@@ -12,11 +13,13 @@ import com.harsh.playspot.data.imagekit.ImageKitRepository
 import com.harsh.playspot.ui.core.SportColors
 import com.harsh.playspot.ui.home.MatchStatus
 import com.harsh.playspot.ui.home.RecommendedMatch
+import dev.gitlive.firebase.firestore.FilterBuilder
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlin.time.Clock
 
 data class MyEventsUiState(
     val isLoading: Boolean = false,
@@ -94,7 +97,9 @@ class MyEventsViewModel(
                 val attendingResult = firestoreRepository.queryDocuments<UserEvent>(
                     collection = CollectionNames.USER_EVENTS,
                     field = "userId",
-                    value = currentUser.uid
+                    value = currentUser.uid,
+                    field2 = "eventStartTimeStamp",
+                    value2 = currentTimeMillis() + 1000 * 60 * 60 //add an hour
                 )
 
                 attendingResult
@@ -110,13 +115,11 @@ class MyEventsViewModel(
                                     collection = CollectionNames.EVENTS,
                                     documentId = userEvent.eventId
                                 )
-                                eventResult.getOrNull()?.let { event ->
-                                    event.toRecommendedMatch(isCreator = false)
-                                }
+                                eventResult.getOrNull()?.toRecommendedMatch(isCreator = false)
                             }
                         _uiState.update {
                             it.copy(
-
+                                attendingEvents = attendingMatches,
                                 isLoading = false
                             )
                         }

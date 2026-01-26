@@ -24,7 +24,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.SportsScore
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.CircularProgressIndicator
@@ -32,7 +31,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -49,47 +47,28 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.harsh.playspot.HandleSharedEvents
-import com.harsh.playspot.dao.Event
-import com.harsh.playspot.ui.core.BodyMedium
-import com.harsh.playspot.ui.core.BodySmall
 import com.harsh.playspot.ui.core.EmptyState
 import com.harsh.playspot.ui.core.LabelLarge
 import com.harsh.playspot.ui.core.LabelSmall
 import com.harsh.playspot.ui.core.Padding
-import com.harsh.playspot.ui.core.SportUi
 import com.harsh.playspot.ui.core.TitleMedium
 import com.harsh.playspot.ui.core.extendedColors
-import com.harsh.playspot.ui.core.getSportsMap
 import com.harsh.playspot.ui.events.MyEventsViewModel
 import org.jetbrains.compose.resources.stringResource
 import playspot.composeapp.generated.resources.Res
 import playspot.composeapp.generated.resources.events_add
 import playspot.composeapp.generated.resources.events_add_event
-import playspot.composeapp.generated.resources.events_individual_training
 import playspot.composeapp.generated.resources.events_notifications
 import playspot.composeapp.generated.resources.events_see_all
+import playspot.composeapp.generated.resources.events_suggested_for_you
 import playspot.composeapp.generated.resources.events_tab_attending
 import playspot.composeapp.generated.resources.events_tab_organizing
 import playspot.composeapp.generated.resources.events_title
 import playspot.composeapp.generated.resources.events_upcoming_matches
-import com.harsh.playspot.dao.EventStatus as FirestoreEventStatus
-
-data class SportEvent(
-    val sport: SportUi,
-    val title: String,
-    val location: String,
-    val dateTime: String,
-    val status: EventStatus,
-    val currentPlayers: Int,
-    val maxPlayers: Int,
-    val memberAvatars: List<String> = emptyList()
-)
 
 enum class EventStatus(val label: String, val color: Color, val bgColor: Color) {
     CONFIRMED(
@@ -121,38 +100,6 @@ fun EventsScreen(
     val tabOrganizing = stringResource(Res.string.events_tab_organizing)
     val eventsUiState by viewModel.uiState.collectAsState()
     var selectedTab by remember { mutableStateOf(if (eventsUiState.selectedTabIndex == 0) tabAttending else tabOrganizing) }
-
-    val football = getSportsMap()["Football"] ?: return
-    val tennis = getSportsMap()["Tennis"] ?: return
-    val swim = getSportsMap()["Swimming"] ?: return
-
-    val sampleEvents = listOf(
-        SportEvent(
-            sport = football,
-            title = "5-a-side Football",
-            location = "Downtown Arena",
-            dateTime = "Tonight 19:00",
-            status = EventStatus.CONFIRMED,
-            currentPlayers = 9,
-            maxPlayers = 10
-        ), SportEvent(
-            sport = tennis,
-            title = "Morning Tennis",
-            location = "Green Park Courts",
-            dateTime = "Sat, 12 Oct",
-            status = EventStatus.PENDING,
-            currentPlayers = 2,
-            maxPlayers = 4
-        ), SportEvent(
-            sport = swim,
-            title = "Weekly Swim",
-            location = "City Pool",
-            dateTime = "Tue, 15 Oct",
-            status = EventStatus.SOLO,
-            currentPlayers = 1,
-            maxPlayers = 1
-        )
-    )
 
     val isOrganizingTab = selectedTab == tabOrganizing
 
@@ -252,19 +199,6 @@ fun EventsScreen(
 
                 if (isOrganizingTab) {
                     // Organizing Tab Content - Show events created by the user
-                    item {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            TitleMedium(
-                                text = "My Events",
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.extendedColors.textDark
-                            )
-                        }
-                    }
 
                     if (eventsUiState.isLoading && eventsUiState.organizingEvents.isEmpty()) {
                         item {
@@ -285,6 +219,20 @@ fun EventsScreen(
                             )
                         }
                     } else {
+                        item {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                TitleMedium(
+                                    text = "My Events",
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.extendedColors.textDark
+                                )
+                            }
+                        }
+
                         items(eventsUiState.organizingEvents) { match ->
                             RecommendedMatchCard(
                                 match = match,
@@ -296,26 +244,6 @@ fun EventsScreen(
                 } else {
                     // Attending Tab Content - Show user's participated events from USER_EVENTS collection
 
-                    // Upcoming Matches Header
-                    item {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            TitleMedium(
-                                text = stringResource(Res.string.events_upcoming_matches),
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.extendedColors.textDark
-                            )
-                            LabelLarge(
-                                text = stringResource(Res.string.events_see_all),
-                                fontWeight = FontWeight.Medium,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        }
-                    }
-
                     // Attending Event Cards using RecommendedMatchCard
                     if (eventsUiState.attendingEvents.isEmpty() && !eventsUiState.isLoading) {
                         item {
@@ -326,13 +254,48 @@ fun EventsScreen(
                                 onClick = onExploreEventsClick
                             )
                         }
-                    } else {
+                    } else if (!eventsUiState.isLoading) {
+                        // Upcoming Matches Header
+                        item {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                TitleMedium(
+                                    text = stringResource(Res.string.events_upcoming_matches),
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.extendedColors.textDark
+                                )
+                                LabelLarge(
+                                    text = stringResource(Res.string.events_see_all),
+                                    fontWeight = FontWeight.Medium,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
+
                         items(eventsUiState.attendingEvents) { match ->
                             RecommendedMatchCard(
                                 match = match,
                                 horizontalPadding = 0.dp,
                                 onClick = { onEventDetailsClick(match.id) }
                             )
+                        }
+
+                        // Suggested For You Header
+                        item {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            TitleMedium(
+                                text = stringResource(Res.string.events_suggested_for_you),
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.extendedColors.textDark
+                            )
+                        }
+
+                        // Suggested Cards (Horizontal)
+                        item {
+                            SuggestedSection()
                         }
                     }
                 }
@@ -375,138 +338,6 @@ private fun TabSwitcher(
     }
 }
 
-@Composable
-private fun EventCard(event: SportEvent) {
-    val shape = RoundedCornerShape(12.dp)
-
-    Row(
-        modifier = Modifier.fillMaxWidth().clip(shape)
-            .background(MaterialTheme.extendedColors.widgetBg).border(
-                width = 1.dp, color = MaterialTheme.extendedColors.outline, shape = shape
-            ).padding(Padding.padding16Dp), horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Row(
-            modifier = Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            // Sport Icon
-            Box(
-                modifier = Modifier.size(48.dp).clip(RoundedCornerShape(12.dp))
-                    .background(event.sport.color.copy(alpha = 0.1f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = event.sport.icon,
-                    contentDescription = null,
-                    tint = event.sport.color,
-                    modifier = Modifier.size(24.dp)
-                )
-            }
-
-            // Event Details
-            Column(
-                verticalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                BodyMedium(
-                    text = event.title,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.extendedColors.textDark
-                )
-                BodySmall(
-                    text = "${event.location} • ${event.dateTime}",
-                    color = MaterialTheme.colorScheme.outlineVariant
-                )
-
-                // Member avatars or info
-                if (event.status != EventStatus.SOLO) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier.padding(top = 4.dp)
-                    ) {
-                        // Avatar stack
-                        Row {
-                            repeat(minOf(3, event.currentPlayers)) { index ->
-                                Box(
-                                    modifier = Modifier.offset(x = (-8 * index).dp).size(24.dp)
-                                        .clip(CircleShape).background(
-                                            listOf(
-                                                Color(0xFF3B82F6),
-                                                Color(0xFFF97316),
-                                                Color(0xFF22C55E)
-                                            )[index % 3]
-                                        ).border(
-                                            width = 2.dp,
-                                            color = MaterialTheme.extendedColors.widgetBg,
-                                            shape = CircleShape
-                                        ), contentAlignment = Alignment.Center
-                                ) {
-                                    Text(
-                                        text = listOf("A", "B", "C")[index % 3],
-                                        fontSize = 10.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = Color.White
-                                    )
-                                }
-                            }
-                        }
-                        if (event.currentPlayers > 3) {
-                            LabelSmall(
-                                text = "+${event.currentPlayers - 3} others",
-                                color = MaterialTheme.colorScheme.outlineVariant,
-                            )
-                        }
-                    }
-                } else {
-                    LabelSmall(
-                        text = stringResource(Res.string.events_individual_training),
-                        modifier = Modifier.padding(top = 4.dp),
-                        color = MaterialTheme.colorScheme.outlineVariant,
-                    )
-                }
-            }
-        }
-
-        // Right side - Status and Progress
-        Column(
-            horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            // Status Badge
-            Box(
-                modifier = Modifier.clip(RoundedCornerShape(4.dp)).background(event.status.bgColor)
-                    .padding(horizontal = 8.dp, vertical = 4.dp)
-            ) {
-                Text(
-                    text = event.status.label,
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = event.status.color,
-                    letterSpacing = 0.5.sp
-                )
-            }
-
-            // Progress bar (only for non-solo events)
-            if (event.status != EventStatus.SOLO) {
-                Column(
-                    horizontalAlignment = Alignment.End, modifier = Modifier.width(80.dp)
-                ) {
-                    LabelSmall(
-                        text = "${event.currentPlayers}/${event.maxPlayers}",
-                        color = MaterialTheme.colorScheme.outlineVariant,
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    LinearProgressIndicator(
-                        progress = { event.currentPlayers.toFloat() / event.maxPlayers },
-                        modifier = Modifier.fillMaxWidth().height(6.dp)
-                            .clip(RoundedCornerShape(3.dp)),
-                        color = event.sport.color,
-                        trackColor = MaterialTheme.extendedColors.outline,
-                        strokeCap = StrokeCap.Round
-                    )
-                }
-            }
-        }
-    }
-}
 
 @Composable
 private fun SuggestedSection() {
@@ -570,195 +401,6 @@ private fun SuggestedCard(title: String, distance: String) {
                 tint = Color.White,
                 modifier = Modifier.size(18.dp)
             )
-        }
-    }
-}
-
-@Composable
-private fun OrganizedEventCard(
-    event: Event, onClick: () -> Unit
-) {
-    val shape = RoundedCornerShape(12.dp)
-    val statusColor = when (event.status) {
-        FirestoreEventStatus.UPCOMING -> Color(0xFF16A34A)
-        FirestoreEventStatus.ONGOING -> Color(0xFF16A34A)
-        FirestoreEventStatus.COMPLETED -> MaterialTheme.colorScheme.outlineVariant
-        FirestoreEventStatus.CANCELLED -> Color(0xFFEF4444)
-        else -> MaterialTheme.colorScheme.outlineVariant
-    }
-    val statusLabel = when (event.status) {
-        FirestoreEventStatus.UPCOMING -> "Confirmed"
-        FirestoreEventStatus.ONGOING -> "Ongoing"
-        FirestoreEventStatus.COMPLETED -> "Completed"
-        FirestoreEventStatus.CANCELLED -> "Cancelled"
-        else -> event.status.replaceFirstChar { it.uppercase() }
-    }
-
-    val sportsMap = getSportsMap()
-    val sportUi = sportsMap[event.sportType]
-
-    Row(
-        modifier = Modifier.fillMaxWidth().clip(shape)
-            .background(MaterialTheme.extendedColors.widgetBg).border(
-                width = 1.dp, color = MaterialTheme.extendedColors.outline, shape = shape
-            ).clickable { onClick() }.padding(Padding.padding16Dp),
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Row(
-            modifier = Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            // Sport Icon
-            Box(
-                modifier = Modifier.size(48.dp).clip(RoundedCornerShape(12.dp)).background(
-                    (sportUi?.color ?: MaterialTheme.colorScheme.primary).copy(alpha = 0.1f)
-                ), contentAlignment = Alignment.Center
-            ) {
-                if (sportUi != null) {
-                    Icon(
-                        imageVector = sportUi.icon,
-                        contentDescription = null,
-                        tint = sportUi.color,
-                        modifier = Modifier.size(24.dp)
-                    )
-                } else {
-                    Icon(
-                        imageVector = Icons.Filled.SportsScore,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
-            }
-
-            // Event Details
-            Column(
-                verticalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                BodyMedium(
-                    text = event.matchName,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.extendedColors.textDark
-                )
-
-                // Location & Date/Time
-                val locationText =
-                    if (event.venue.name.isNotBlank()) event.venue.name else "No venue"
-                val dateTimeText = buildString {
-                    if (event.date.isNotBlank()) append(event.date)
-                    if (event.time.isNotBlank()) {
-                        if (isNotEmpty()) append(" • ")
-                        append(event.time)
-                    }
-                }
-                BodySmall(
-                    text = "$locationText • $dateTimeText",
-                    color = MaterialTheme.colorScheme.outlineVariant
-                )
-
-                // Player avatars or info
-                if (event.playerLimit > 1) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier.padding(top = 4.dp)
-                    ) {
-                        // Avatar stack
-                        Row {
-                            val avatarColors = listOf(
-                                Color(0xFF3B82F6), Color(0xFFF97316), Color(0xFF22C55E)
-                            )
-                            val avatarLabels = listOf("A", "B", "C")
-                            repeat(minOf(3, event.currentPlayers)) { index ->
-                                Box(
-                                    modifier = Modifier.offset(x = (-8 * index).dp).size(24.dp)
-                                        .clip(CircleShape).background(avatarColors[index % 3])
-                                        .border(
-                                            width = 2.dp,
-                                            color = MaterialTheme.extendedColors.widgetBg,
-                                            shape = CircleShape
-                                        ), contentAlignment = Alignment.Center
-                                ) {
-                                    Text(
-                                        text = avatarLabels[index % 3],
-                                        fontSize = 10.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = Color.White
-                                    )
-                                }
-                            }
-                        }
-                        if (event.currentPlayers > 3) {
-                            LabelSmall(
-                                text = "+${event.currentPlayers - 3} others",
-                                color = MaterialTheme.colorScheme.outlineVariant,
-                            )
-                        }
-                    }
-                } else {
-                    LabelSmall(
-                        text = "Individual training",
-                        modifier = Modifier.padding(top = 4.dp),
-                        color = MaterialTheme.colorScheme.outlineVariant,
-                    )
-                }
-            }
-        }
-
-        // Right side - Status and Progress
-        Column(
-            horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            // Status Badge
-            Box(
-                modifier = Modifier.clip(RoundedCornerShape(4.dp))
-                    .background(statusColor.copy(alpha = 0.1f))
-                    .padding(horizontal = 8.dp, vertical = 4.dp)
-            ) {
-                Text(
-                    text = statusLabel,
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = statusColor,
-                    letterSpacing = 0.5.sp
-                )
-            }
-
-            // Progress bar (only for multi-player events)
-            if (event.playerLimit > 1) {
-                Column(
-                    horizontalAlignment = Alignment.End, modifier = Modifier.width(80.dp)
-                ) {
-                    LabelSmall(
-                        text = "${event.currentPlayers}/${event.playerLimit}",
-                        color = MaterialTheme.colorScheme.outlineVariant,
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    LinearProgressIndicator(
-                        progress = { event.currentPlayers.toFloat() / event.playerLimit },
-                        modifier = Modifier.fillMaxWidth().height(6.dp)
-                            .clip(RoundedCornerShape(3.dp)),
-                        color = sportUi?.color ?: MaterialTheme.colorScheme.primary,
-                        trackColor = MaterialTheme.extendedColors.outline,
-                        strokeCap = StrokeCap.Round
-                    )
-                }
-            }
-
-            // Skill level badge
-            if (event.skillLevel.isNotBlank()) {
-                Box(
-                    modifier = Modifier.clip(RoundedCornerShape(4.dp))
-                        .background(MaterialTheme.extendedColors.outline)
-                        .padding(horizontal = 6.dp, vertical = 2.dp)
-                ) {
-                    Text(
-                        text = event.skillLevel,
-                        fontSize = 9.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.outlineVariant
-                    )
-                }
-            }
         }
     }
 }
