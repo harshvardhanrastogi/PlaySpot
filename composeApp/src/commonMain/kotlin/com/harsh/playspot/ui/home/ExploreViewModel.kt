@@ -9,6 +9,7 @@ import com.harsh.playspot.data.firestore.CollectionNames
 import com.harsh.playspot.data.firestore.FirestoreRepository
 import com.harsh.playspot.data.imagekit.ImageKitRepository
 import com.harsh.playspot.ui.core.SportColors
+import com.harsh.playspot.util.getCurrentTimeWithJoiningBuffer
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -44,7 +45,9 @@ class ExploreViewModel(
             firestoreRepository.queryDocuments<Event>(
                 collection = CollectionNames.EVENTS,
                 field = "status",
-                value = EventStatus.UPCOMING
+                value = EventStatus.UPCOMING,
+                field2 = "eventStartTimeStamp",
+                value2 = getCurrentTimeWithJoiningBuffer()
             )
                 .onSuccess { events ->
                     // Filter out:

@@ -501,6 +501,7 @@ class CreateEventViewModel(
                     "sportType" to currentState.sportType,
                     "date" to currentState.date,
                     "time" to currentState.time,
+                    "eventStartTimeStamp" to convertDateTimeToTimestamp(currentState.date, currentState.time),
                     "playerLimit" to (currentState.playerLimit.toIntOrNull() ?: 0),
                     "description" to currentState.description.trim(),
                     "skillLevel" to currentState.skillLevel.name,
