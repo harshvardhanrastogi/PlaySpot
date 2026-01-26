@@ -24,6 +24,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.CircularProgressIndicator
@@ -47,9 +48,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil3.compose.AsyncImage
 import com.harsh.playspot.HandleSharedEvents
 import com.harsh.playspot.ui.core.EmptyState
 import com.harsh.playspot.ui.core.LabelLarge
@@ -121,12 +124,28 @@ fun EventsScreen(
                                     shape = CircleShape
                                 ), contentAlignment = Alignment.Center
                         ) {
-                            Text(
-                                text = "AJ",
-                                style = MaterialTheme.typography.labelLarge,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.primary
-                            )
+
+                            if (!eventsUiState.userProfileUrl.isNullOrEmpty()) {
+                                AsyncImage(
+                                    model = eventsUiState.userProfileUrl,
+                                    contentDescription = "Profile photo",
+                                    modifier = Modifier.matchParentSize(),
+                                    contentScale = ContentScale.Crop
+                                )
+                            } else if (!eventsUiState.userInitials.isNullOrEmpty()) {
+                                Text(
+                                    text = eventsUiState.userInitials!!,
+                                    style = MaterialTheme.typography.labelLarge,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            } else {
+                                Icon(
+                                    imageVector = Icons.Filled.Person,
+                                    contentDescription = "Profile photo"
+                                )
+                            }
+
                         }
                         // Online indicator
                         Box(

@@ -23,7 +23,9 @@ data class MyEventsUiState(
     val organizingEvents: List<RecommendedMatch> = emptyList(),
     val attendingEvents: List<RecommendedMatch> = emptyList(),
     val errorMessage: String? = null,
-    val selectedTabIndex: Int = 0
+    val selectedTabIndex: Int = 0,
+    val userInitials: String? = null,
+    val userProfileUrl: String? = null
 )
 
 interface EventManager {
@@ -58,6 +60,8 @@ class MyEventsViewModel(
             _uiState.update { it.copy(errorMessage = "Please login to view your events") }
             return
         }
+
+        _uiState.update { it.copy(userInitials = getUserInitials(), userProfileUrl = getProfileUrl()) }
 
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
@@ -147,7 +151,7 @@ class MyEventsViewModel(
     private fun Event.toRecommendedMatch(isCreator: Boolean): RecommendedMatch {
         val sportColor = SportColors.getColor(sportType)
         val formattedDateTime = if (time.isNotBlank()) "$date • $time" else date
-        
+
         // Get optimized cover image URL
         val optimizedCoverUrl = if (coverImageUrl.isNotBlank()) {
             imageKitRepository.getExploreCoverUrl(coverImageUrl)
@@ -156,8 +160,9 @@ class MyEventsViewModel(
         // Determine match status based on player count
         val status = when {
             playerLimit > 0 && currentPlayers >= playerLimit -> MatchStatus.Full
-            playerLimit > 0 && (playerLimit - currentPlayers) <= 2 -> 
+            playerLimit > 0 && (playerLimit - currentPlayers) <= 2 ->
                 MatchStatus.SpotsLeft(playerLimit - currentPlayers)
+
             playerLimit > 0 -> MatchStatus.Attending(currentPlayers, playerLimit)
             else -> MatchStatus.Open
         }
@@ -200,5 +205,14 @@ class MyEventsViewModel(
         _uiState.update {
             it.copy(selectedTabIndex = if (openOrganizingEvents) 1 else 0)
         }
+    }
+
+    private fun getProfileUrl(): String? {
+        return authRepository.currentUser?.photoURL
+    }
+
+    private fun getUserInitials(): String {
+        val split = authRepository.currentUser?.displayName?.split(" ") ?: emptyList()
+        return "${(split.getOrNull(0) ?: "").trim()}${(split.getOrNull(1) ?: "").trim()}"
     }
 }
