@@ -81,6 +81,7 @@ kotlin {
             // Coil Image Loading
             implementation(libs.coil.compose)
             implementation(libs.coil.network.ktor)
+            implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.0")
         }
         iosMain.dependencies {
             // Ktor Darwin engine for iOS
