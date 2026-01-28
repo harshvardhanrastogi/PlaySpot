@@ -30,3 +30,11 @@ expect fun generateUniqueId(): String
  * @param title Optional title for the share sheet
  */
 expect fun shareText(text: String, title: String = "")
+
+/**
+ * Open a location in the device's default map application
+ * @param latitude The latitude of the location
+ * @param longitude The longitude of the location
+ * @param label Optional label for the location marker
+ */
+expect fun openMap(latitude: Double, longitude: Double, label: String = "")

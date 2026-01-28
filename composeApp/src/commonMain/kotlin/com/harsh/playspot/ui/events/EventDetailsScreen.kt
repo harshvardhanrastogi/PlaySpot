@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -25,7 +24,6 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.LocationOn
@@ -36,8 +34,6 @@ import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -56,10 +52,10 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
 import com.harsh.playspot.dao.Event
+import com.harsh.playspot.openMap
 import com.harsh.playspot.shareText
 import com.harsh.playspot.ui.core.AppTheme
 import com.harsh.playspot.ui.core.BodyMedium
@@ -113,7 +109,11 @@ fun EventDetailsScreenRoute(
                 shareEvent(event)
             }
         },
-        onOpenMapClick = { /* TODO */ },
+        onOpenMapClick = {
+            uiState.event?.let { event ->
+                openMapForEvent(event)
+            }
+        },
         onHostChatClick = { /* TODO */ }
     )
 }
@@ -137,6 +137,20 @@ private fun shareEvent(event: Event) {
         appendLine(deepLink)
     }
     shareText(shareContent, "Share Event")
+}
+
+/**
+ * Open the event venue location in the device's map app
+ */
+private fun openMapForEvent(event: Event) {
+    val venue = event.venue
+    if (venue.latitude != 0.0 && venue.longitude != 0.0) {
+        openMap(
+            latitude = venue.latitude,
+            longitude = venue.longitude,
+            label = venue.name.ifBlank { event.matchName }
+        )
+    }
 }
 
 @Composable

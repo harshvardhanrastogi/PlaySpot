@@ -52,3 +52,18 @@ actual fun shareText(text: String, title: String) {
         completion = null
     )
 }
+
+actual fun openMap(latitude: Double, longitude: Double, label: String) {
+    // Try Apple Maps first, then fallback to Google Maps web URL
+    val encodedLabel = label.replace(" ", "+")
+    val appleMapsUrl = if (label.isNotBlank()) {
+        "http://maps.apple.com/?ll=$latitude,$longitude&q=$encodedLabel"
+    } else {
+        "http://maps.apple.com/?ll=$latitude,$longitude"
+    }
+    
+    val url = platform.Foundation.NSURL.URLWithString(appleMapsUrl)
+    if (url != null) {
+        UIApplication.sharedApplication.openURL(url)
+    }
+}

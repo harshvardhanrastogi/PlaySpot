@@ -61,7 +61,12 @@ class MyEventsViewModel(
             return
         }
 
-        _uiState.update { it.copy(userInitials = getUserInitials(), userProfileUrl = getProfileUrl()) }
+        _uiState.update {
+            it.copy(
+                userInitials = getUserInitials(),
+                userProfileUrl = getProfileUrl()
+            )
+        }
 
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
@@ -213,6 +218,8 @@ class MyEventsViewModel(
 
     private fun getUserInitials(): String {
         val split = authRepository.currentUser?.displayName?.split(" ") ?: emptyList()
-        return "${(split.getOrNull(0) ?: "").trim()}${(split.getOrNull(1) ?: "").trim()}"
+        return "${(split.getOrNull(0)?.take(1) ?: "").trim()}${
+            (split.getOrNull(1)?.take(1) ?: "").trim()
+        }"
     }
 }

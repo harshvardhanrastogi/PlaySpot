@@ -56,3 +56,23 @@ actual fun shareText(text: String, title: String) {
     val shareIntent = Intent.createChooser(sendIntent, title.ifBlank { null })
     activity.startActivity(shareIntent)
 }
+
+actual fun openMap(latitude: Double, longitude: Double, label: String) {
+    val activity = activityProvider?.invoke() ?: return
+    // Use geo URI which works with Google Maps, Waze, and other map apps
+    val encodedLabel = java.net.URLEncoder.encode(label, "UTF-8")
+    val geoUri = if (label.isNotBlank()) {
+        "geo:$latitude,$longitude?q=$latitude,$longitude($encodedLabel)"
+    } else {
+        "geo:$latitude,$longitude?q=$latitude,$longitude"
+    }
+    val intent = Intent(Intent.ACTION_VIEW, android.net.Uri.parse(geoUri))
+    try {
+        activity.startActivity(intent)
+    } catch (e: Exception) {
+        // Fallback to Google Maps web URL if no map app is installed
+        val webUrl = "https://www.google.com/maps/search/?api=1&query=$latitude,$longitude"
+        val webIntent = Intent(Intent.ACTION_VIEW, android.net.Uri.parse(webUrl))
+        activity.startActivity(webIntent)
+    }
+}
