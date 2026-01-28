@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Person
@@ -24,6 +26,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.harsh.playspot.ui.core.AlternateAccountOptions
@@ -132,7 +137,11 @@ private fun SignUpScreen(
                 Icon(
                     imageVector = Icons.Filled.Person, contentDescription = null
                 )
-            })
+            },
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next, capitalization = KeyboardCapitalization.Words),
+            keyboardActions = KeyboardActions(onNext = {
+                defaultKeyboardAction(ImeAction.Next)
+            }))
 
         TextField(
             modifier = Modifier.fillMaxWidth().padding(top = Padding.padding16Dp),
@@ -147,7 +156,11 @@ private fun SignUpScreen(
                 Icon(
                     imageVector = Icons.Filled.Email, contentDescription = null
                 )
-            })
+            },
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next, keyboardType = KeyboardType.Email),
+            keyboardActions = KeyboardActions(onNext = {
+                defaultKeyboardAction(ImeAction.Next)
+            }))
 
         TextFieldPassword(
             modifier = Modifier.fillMaxWidth().padding(top = Padding.padding16Dp),
@@ -157,7 +170,11 @@ private fun SignUpScreen(
             staticLabelText = stringResource(Res.string.signup_password),
             placeHolderText = stringResource(Res.string.signup_create_password),
             isError = uiState.passwordError != null,
-            errorText = uiState.passwordError
+            errorText = uiState.passwordError,
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next, keyboardType = KeyboardType.Password),
+            keyboardActions = KeyboardActions(onNext = {
+                defaultKeyboardAction(ImeAction.Next)
+            })
         )
 
         TextFieldPassword(
@@ -168,7 +185,12 @@ private fun SignUpScreen(
             staticLabelText = stringResource(Res.string.signup_confirm_password),
             placeHolderText = stringResource(Res.string.signup_confirm_password),
             isError = uiState.confirmPasswordError != null,
-            errorText = uiState.confirmPasswordError
+            errorText = uiState.confirmPasswordError,
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done, keyboardType = KeyboardType.Password),
+            keyboardActions = KeyboardActions(onDone = {
+                defaultKeyboardAction(ImeAction.Done)
+                onSignUpClicked()
+            })
         )
 
         LargeButton(

@@ -27,6 +27,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
@@ -231,7 +233,9 @@ fun TextField(
     placeHolderText: String = "",
     leadingIcon: @Composable (() -> Unit)? = null,
     trailingIcon: @Composable (() -> Unit)? = null,
-    visualTransformation: VisualTransformation = VisualTransformation.None
+    visualTransformation: VisualTransformation = VisualTransformation.None,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    keyboardActions: KeyboardActions = KeyboardActions.Default
 ) {
     val hapticFeedback = LocalHapticFeedback.current
     Column(modifier = modifier) {
@@ -286,7 +290,9 @@ fun TextField(
             shape = shape,
             supportingText = if (errorText != null) {
                 { LabelSmall(text = errorText, color = MaterialTheme.colorScheme.error) }
-            } else null
+            } else null,
+            keyboardOptions = keyboardOptions,
+            keyboardActions = keyboardActions
         )
     }
 }
@@ -302,7 +308,9 @@ fun TextFieldPassword(
     singleLine: Boolean = false,
     staticLabelText: String = "",
     placeHolderText: String = "",
-    leadingIcon: @Composable (() -> Unit)? = null
+    leadingIcon: @Composable (() -> Unit)? = null,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    keyboardActions: KeyboardActions = KeyboardActions.Default
 ) {
     var visualTransformation: VisualTransformation by remember {
         mutableStateOf(
@@ -329,7 +337,9 @@ fun TextFieldPassword(
                 }
             }
         },
-        visualTransformation = visualTransformation
+        visualTransformation = visualTransformation,
+        keyboardOptions = keyboardOptions,
+        keyboardActions = keyboardActions
     )
 }
 
