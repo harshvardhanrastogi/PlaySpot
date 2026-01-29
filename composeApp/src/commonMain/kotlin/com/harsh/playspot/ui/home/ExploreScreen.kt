@@ -83,7 +83,17 @@ import com.harsh.playspot.ui.core.Padding
 import com.harsh.playspot.ui.core.TitleMedium
 import com.harsh.playspot.ui.core.extendedColors
 import com.harsh.playspot.ui.core.getSportsMap
+import com.harsh.playspot.ui.signup.LocationPermissionScreen
 import org.jetbrains.compose.ui.tooling.preview.Preview
+
+/**
+ * Platform-specific location permission screen for Explore tab
+ */
+@Composable
+expect fun ExploreLocationPermissionScreen(
+    onPermissionGranted: () -> Unit,
+    onSkip: () -> Unit
+)
 
 // Data classes for Explore screen
 data class TrendingMatch(
@@ -137,12 +147,21 @@ fun ExploreScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     
-    ExploreScreenContent(
-        recommendedMatches = uiState.recommendedMatches,
-        isLoading = uiState.isLoading,
-        onRefresh = viewModel::loadEvents,
-        onEventClick = onEventClick
-    )
+    // Show location permission screen if permission not granted
+    if (!uiState.isCheckingPermission && uiState.hasLocationPermission == false) {
+        ExploreLocationPermissionScreen(
+            onPermissionGranted = viewModel::onLocationPermissionGranted,
+            onSkip = viewModel::onLocationPermissionSkipped
+        )
+    } else {
+        ExploreScreenContent(
+            recommendedMatches = uiState.recommendedMatches,
+            isLoading = uiState.isLoading || uiState.isCheckingPermission,
+            userLocation = uiState.userLocationDisplay,
+            onRefresh = viewModel::loadEvents,
+            onEventClick = onEventClick
+        )
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -150,6 +169,7 @@ fun ExploreScreen(
 private fun ExploreScreenContent(
     recommendedMatches: List<RecommendedMatch>,
     isLoading: Boolean = false,
+    userLocation: String = "",
     onRefresh: () -> Unit = {},
     onEventClick: (String) -> Unit = {}
 ) {
@@ -211,7 +231,7 @@ private fun ExploreScreenContent(
         ) {
         // Header
         item {
-            ExploreHeader()
+            ExploreHeader(userLocation = userLocation)
         }
         
         // Search Bar
@@ -267,7 +287,9 @@ private fun ExploreScreenContent(
 }
 
 @Composable
-private fun ExploreHeader() {
+private fun ExploreHeader(
+    userLocation: String = ""
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -287,7 +309,7 @@ private fun ExploreHeader() {
                 modifier = Modifier.clickable { /* TODO: Location picker */ }
             ) {
                 TitleMedium(
-                    text = "San Francisco, CA",
+                    text = userLocation.ifBlank { "Select your city" },
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.extendedColors.textDark
                 )

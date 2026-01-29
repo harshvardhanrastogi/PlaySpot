@@ -9,6 +9,7 @@ import com.harsh.playspot.data.firestore.CollectionNames
 import com.harsh.playspot.data.firestore.FirestoreRepository
 import com.harsh.playspot.data.imagekit.ImageKitRepository
 import com.harsh.playspot.ui.core.SportColors
+import com.harsh.playspot.util.LocationProvider
 import com.harsh.playspot.util.getCurrentTimeWithJoiningBuffer
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -18,6 +19,9 @@ import kotlinx.coroutines.launch
 
 data class ExploreUiState(
     val isLoading: Boolean = false,
+    val isCheckingPermission: Boolean = true,
+    val hasLocationPermission: Boolean? = null,
+    val userLocationDisplay: String = "",
     val recommendedMatches: List<RecommendedMatch> = emptyList(),
     val error: String? = null
 )
@@ -25,14 +29,74 @@ data class ExploreUiState(
 class ExploreViewModel(
     private val firestoreRepository: FirestoreRepository = FirestoreRepository.instance,
     private val authRepository: AuthRepository = AuthRepository.getInstance(),
-    private val imageKitRepository: ImageKitRepository = ImageKitRepository.getInstance()
+    private val imageKitRepository: ImageKitRepository = ImageKitRepository.getInstance(),
+    private val locationProvider: LocationProvider = LocationProvider.getInstance()
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ExploreUiState())
     val uiState: StateFlow<ExploreUiState> = _uiState.asStateFlow()
 
     init {
+        checkLocationPermission()
+    }
+    
+    fun checkLocationPermission() {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isCheckingPermission = true) }
+            val hasPermission = locationProvider.hasLocationPermission()
+            _uiState.update { 
+                it.copy(
+                    isCheckingPermission = false,
+                    hasLocationPermission = hasPermission
+                ) 
+            }
+            
+            // If permission already granted, fetch and display location
+            if (hasPermission) {
+                fetchAndSaveLocation()
+            }
+            
+            // Load events regardless of permission
+            loadEvents()
+        }
+    }
+    
+    fun onLocationPermissionGranted() {
+        viewModelScope.launch {
+            _uiState.update { it.copy(hasLocationPermission = true) }
+            fetchAndSaveLocation()
+            loadEvents()
+        }
+    }
+    
+    fun onLocationPermissionSkipped() {
+        _uiState.update { it.copy(hasLocationPermission = true) } // Treat as granted to hide the prompt
         loadEvents()
+    }
+    
+    private suspend fun fetchAndSaveLocation() {
+        try {
+            val location = locationProvider.getCurrentLocation() ?: return
+            val address = locationProvider.reverseGeocode(location.latitude, location.longitude) ?: return
+            
+            val locationDisplay = address.toDisplayString()
+            _uiState.update { it.copy(userLocationDisplay = locationDisplay) }
+            
+            // Save to user profile
+            val uid = authRepository.currentUser?.uid ?: return
+            val updates = mapOf(
+                "city" to locationDisplay,
+                "latitude" to location.latitude,
+                "longitude" to location.longitude
+            )
+            firestoreRepository.updateDocument(
+                collection = CollectionNames.USER_PROFILE,
+                documentId = uid,
+                updates = updates
+            )
+        } catch (e: Exception) {
+            // Silently fail - location is not critical
+        }
     }
 
     fun loadEvents() {

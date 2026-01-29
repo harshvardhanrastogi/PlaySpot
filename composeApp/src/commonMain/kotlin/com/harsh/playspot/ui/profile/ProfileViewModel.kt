@@ -112,11 +112,32 @@ class ProfileViewModel(
             }
             
             val location = locationProvider.getCurrentLocation() ?: return ""
-            val address = locationProvider.reverseGeocode(location.latitude, location.longitude)
-            address?.toDisplayString() ?: ""
+            val address = locationProvider.reverseGeocode(location.latitude, location.longitude) ?: return ""
+            val locationDisplay = address.toDisplayString()
+            
+            // Save to user profile
+            if (locationDisplay.isNotBlank()) {
+                saveLocationToProfile(locationDisplay, location.latitude, location.longitude)
+            }
+            
+            locationDisplay
         } catch (e: Exception) {
             ""
         }
+    }
+    
+    private suspend fun saveLocationToProfile(city: String, latitude: Double, longitude: Double) {
+        val uid = authRepository.currentUser?.uid ?: return
+        val updates = mapOf(
+            "city" to city,
+            "latitude" to latitude,
+            "longitude" to longitude
+        )
+        firestoreRepository.updateDocument(
+            collection = CollectionNames.USER_PROFILE,
+            documentId = uid,
+            updates = updates
+        )
     }
 
     fun logout() {
