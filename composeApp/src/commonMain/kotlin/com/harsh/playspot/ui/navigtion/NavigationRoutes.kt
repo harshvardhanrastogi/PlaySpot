@@ -16,6 +16,7 @@ import com.harsh.playspot.ui.home.HomeScreenRoute
 import com.harsh.playspot.ui.login.LoginScreenRoute
 import com.harsh.playspot.ui.profile.AddProfilePictureScreenRoute
 import com.harsh.playspot.ui.profile.PersonalDetailsScreenRoute
+import com.harsh.playspot.ui.signup.LocationPermissionScreenRoute
 import com.harsh.playspot.ui.signup.PreferenceSetupCompleteRoute
 import com.harsh.playspot.ui.signup.PreferenceSetupRoute
 import com.harsh.playspot.ui.signup.SignupScreenRoute
@@ -91,7 +92,22 @@ fun NavigationRoutes(
             PreferenceSetupRoute(
                 onBackPressed = { navController.popBackStack() },
                 onContinueClicked = {
-                    navController.navigate("Route.SportPreferenceComplete")
+                    navController.navigate("Route.LocationPermission")
+                }
+            )
+        }
+
+        composable(route = "Route.LocationPermission") {
+            LocationPermissionScreenRoute(
+                onContinue = {
+                    navController.navigate("Route.SportPreferenceComplete") {
+                        popUpTo("Route.LocationPermission") { inclusive = true }
+                    }
+                },
+                onSkip = {
+                    navController.navigate("Route.SportPreferenceComplete") {
+                        popUpTo("Route.LocationPermission") { inclusive = true }
+                    }
                 }
             )
         }
@@ -99,7 +115,9 @@ fun NavigationRoutes(
         composable(route = "Route.SportPreferenceComplete") {
             PreferenceSetupCompleteRoute(
                 onBackPressed = { navController.popBackStack() },
-                onDiscoverClicked = { navController.navigate("Route.Home") },
+                onDiscoverClicked = { navController.navigate("Route.Home?defaultTab=1") {
+                    popUpTo("Route.Login") { inclusive = true }
+                } },
                 onCompleteProfileClicked = {
                     navController.navigate("Route.FinishProfile")
                 }
@@ -122,7 +140,7 @@ fun NavigationRoutes(
             )
         }
 
-        composable("Route.Home") { backStackEntry ->
+        composable("Route.Home?defaultTab={defaultTab}") { backStackEntry ->
             val openOrganizingEvents by backStackEntry.savedStateHandle.getStateFlow(
                 "openOrganizing",
                 false
@@ -132,7 +150,9 @@ fun NavigationRoutes(
                     backStackEntry.savedStateHandle["openOrganizing"] = false
                 }
             }
+            val defaultTab = backStackEntry.arguments?.getString("defaultTab")?.toInt() ?: 0
             HomeScreenRoute(
+                defaultBottomTab = defaultTab,
                 openOrganizingEvents = openOrganizingEvents,
                 onLogoutSuccess = {
                     navController.navigate("Route.Login") {

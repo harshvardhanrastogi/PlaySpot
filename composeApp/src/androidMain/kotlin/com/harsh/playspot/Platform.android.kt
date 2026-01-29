@@ -1,12 +1,15 @@
 package com.harsh.playspot
 
+import android.Manifest
 import android.app.Activity
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Build
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
+import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
 
 class AndroidPlatform : Platform {
@@ -74,5 +77,27 @@ actual fun openMap(latitude: Double, longitude: Double, label: String) {
         val webUrl = "https://www.google.com/maps/search/?api=1&query=$latitude,$longitude"
         val webIntent = Intent(Intent.ACTION_VIEW, android.net.Uri.parse(webUrl))
         activity.startActivity(webIntent)
+    }
+}
+
+actual fun requestLocationPermission(onResult: (Boolean) -> Unit) {
+    val activity = activityProvider?.invoke()
+    if (activity == null) {
+        onResult(false)
+        return
+    }
+    
+    // Check if permission is already granted
+    val hasPermission = ContextCompat.checkSelfPermission(
+        activity,
+        Manifest.permission.ACCESS_FINE_LOCATION
+    ) == PackageManager.PERMISSION_GRANTED
+    
+    if (hasPermission) {
+        onResult(true)
+    } else {
+        // For runtime permission request, use the Compose permission launcher
+        // This function is kept for non-Compose contexts
+        onResult(false)
     }
 }

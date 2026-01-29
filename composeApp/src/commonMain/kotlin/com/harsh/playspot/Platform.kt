@@ -38,3 +38,9 @@ expect fun shareText(text: String, title: String = "")
  * @param label Optional label for the location marker
  */
 expect fun openMap(latitude: Double, longitude: Double, label: String = "")
+
+/**
+ * Request location permission from the user
+ * @param onResult Callback with true if permission granted, false otherwise
+ */
+expect fun requestLocationPermission(onResult: (Boolean) -> Unit)

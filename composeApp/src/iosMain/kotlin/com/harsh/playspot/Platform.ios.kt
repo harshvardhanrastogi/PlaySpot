@@ -67,3 +67,11 @@ actual fun openMap(latitude: Double, longitude: Double, label: String) {
         UIApplication.sharedApplication.openURL(url)
     }
 }
+
+actual fun requestLocationPermission(onResult: (Boolean) -> Unit) {
+    // On iOS, location permission is requested automatically when getCurrentLocation is called
+    // The LocationProvider handles this through CLLocationManager
+    // For now, we'll just invoke the callback - the actual permission request
+    // happens in LocationProvider.ios.kt
+    onResult(true)
+}

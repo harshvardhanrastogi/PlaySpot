@@ -49,6 +49,7 @@ data class BottomNavItem(
 
 @Composable
 fun HomeScreenRoute(
+    defaultBottomTab: Int = 0,
     openOrganizingEvents: Boolean,
     onLogoutSuccess: () -> Unit = {},
     onAddSportClicked: () -> Unit = {},
@@ -66,7 +67,7 @@ fun HomeScreenRoute(
         BottomNavItem("Profile", Icons.Filled.Person, Icons.Outlined.Person)
     )
 
-    var selectedTabIndex by rememberSaveable { mutableIntStateOf(0) }
+    var selectedTabIndex by rememberSaveable { mutableIntStateOf(defaultBottomTab) }
 
     AppTheme {
         Scaffold(
