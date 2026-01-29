@@ -7,6 +7,7 @@ import com.harsh.playspot.data.auth.AuthRepository
 import com.harsh.playspot.data.firestore.CollectionNames
 import com.harsh.playspot.data.firestore.FirestoreRepository
 import com.harsh.playspot.data.imagekit.ImageKitRepository
+import com.harsh.playspot.util.LocationProvider
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -45,7 +46,8 @@ sealed class ProfileEvent {
 class ProfileViewModel(
     private val authRepository: AuthRepository = AuthRepository.getInstance(),
     private val firestoreRepository: FirestoreRepository = FirestoreRepository.instance,
-    private val imageKitRepository: ImageKitRepository = ImageKitRepository.getInstance()
+    private val imageKitRepository: ImageKitRepository = ImageKitRepository.getInstance(),
+    private val locationProvider: LocationProvider = LocationProvider.getInstance()
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ProfileUiState())
@@ -77,12 +79,19 @@ class ProfileViewModel(
                     imageKitRepository.getProfilePictureUrl(it, size = 256)
                 }
                 
+                // Get location - use profile city if available, otherwise fetch current location
+                val locationString = if (profile?.city?.isNotBlank() == true) {
+                    profile.city
+                } else {
+                    fetchCurrentLocationString()
+                }
+                
                 _uiState.update {
                     it.copy(
                         isLoading = false,
                         name = profile?.fullName ?: "",
                         username = "@${profile?.userName ?: ""}",
-                        location = profile?.city ?: "",
+                        location = locationString,
                         bio = profile?.bio ?: "",
                         skillLevel = profile?.skillLevel ?: "",
                         playTimes = profile?.playTime ?: emptyList(),
@@ -93,6 +102,20 @@ class ProfileViewModel(
             }.onFailure {
                 _uiState.update { it.copy(isLoading = false) }
             }
+        }
+    }
+    
+    private suspend fun fetchCurrentLocationString(): String {
+        return try {
+            if (!locationProvider.hasLocationPermission()) {
+                return ""
+            }
+            
+            val location = locationProvider.getCurrentLocation() ?: return ""
+            val address = locationProvider.reverseGeocode(location.latitude, location.longitude)
+            address?.toDisplayString() ?: ""
+        } catch (e: Exception) {
+            ""
         }
     }
 

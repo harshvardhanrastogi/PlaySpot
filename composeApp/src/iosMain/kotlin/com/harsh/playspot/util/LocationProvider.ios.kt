@@ -4,9 +4,11 @@ import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.useContents
 import kotlinx.coroutines.suspendCancellableCoroutine
 import platform.CoreLocation.CLAuthorizationStatus
+import platform.CoreLocation.CLGeocoder
 import platform.CoreLocation.CLLocation
 import platform.CoreLocation.CLLocationManager
 import platform.CoreLocation.CLLocationManagerDelegateProtocol
+import platform.CoreLocation.CLPlacemark
 import platform.CoreLocation.kCLAuthorizationStatusAuthorizedAlways
 import platform.CoreLocation.kCLAuthorizationStatusAuthorizedWhenInUse
 import platform.CoreLocation.kCLLocationAccuracyBest
@@ -75,6 +77,34 @@ actual class LocationProvider {
             
             continuation.invokeOnCancellation {
                 locationManager.stopUpdatingLocation()
+            }
+        }
+    }
+    
+    @OptIn(ExperimentalForeignApi::class)
+    actual suspend fun reverseGeocode(latitude: Double, longitude: Double): GeocodedAddress? {
+        return suspendCancellableCoroutine { continuation ->
+            val geocoder = CLGeocoder()
+            val location = CLLocation(latitude = latitude, longitude = longitude)
+            
+            geocoder.reverseGeocodeLocation(location) { placemarks, error ->
+                if (error != null || placemarks == null) {
+                    continuation.resume(null)
+                    return@reverseGeocodeLocation
+                }
+                
+                val placemark = placemarks.firstOrNull() as? CLPlacemark
+                if (placemark != null) {
+                    continuation.resume(
+                        GeocodedAddress(
+                            city = placemark.locality ?: placemark.subAdministrativeArea ?: "",
+                            state = placemark.administrativeArea ?: "",
+                            country = placemark.country ?: ""
+                        )
+                    )
+                } else {
+                    continuation.resume(null)
+                }
             }
         }
     }

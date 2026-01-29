@@ -4,14 +4,19 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
+import android.location.Geocoder
 import android.location.Location
 import android.location.LocationManager
+import android.os.Build
 import androidx.core.content.ContextCompat
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.CancellationTokenSource
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withContext
+import java.util.Locale
 import kotlin.coroutines.resume
 
 actual class LocationProvider {
@@ -82,6 +87,52 @@ actual class LocationProvider {
             
             continuation.invokeOnCancellation {
                 cancellationTokenSource.cancel()
+            }
+        }
+    }
+    
+    @Suppress("DEPRECATION")
+    actual suspend fun reverseGeocode(latitude: Double, longitude: Double): GeocodedAddress? {
+        val ctx = context ?: return null
+        
+        return withContext(Dispatchers.IO) {
+            try {
+                val geocoder = Geocoder(ctx, Locale.getDefault())
+                
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    // Use the new async API for Android 13+
+                    suspendCancellableCoroutine { continuation ->
+                        geocoder.getFromLocation(latitude, longitude, 1) { addresses ->
+                            val address = addresses.firstOrNull()
+                            if (address != null) {
+                                continuation.resume(
+                                    GeocodedAddress(
+                                        city = address.locality ?: address.subAdminArea ?: "",
+                                        state = address.adminArea ?: "",
+                                        country = address.countryName ?: ""
+                                    )
+                                )
+                            } else {
+                                continuation.resume(null)
+                            }
+                        }
+                    }
+                } else {
+                    // Use the deprecated sync API for older versions
+                    val addresses = geocoder.getFromLocation(latitude, longitude, 1)
+                    val address = addresses?.firstOrNull()
+                    if (address != null) {
+                        GeocodedAddress(
+                            city = address.locality ?: address.subAdminArea ?: "",
+                            state = address.adminArea ?: "",
+                            country = address.countryName ?: ""
+                        )
+                    } else {
+                        null
+                    }
+                }
+            } catch (e: Exception) {
+                null
             }
         }
     }

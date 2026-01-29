@@ -194,9 +194,9 @@ fun ProfileScreen(
     isEditing: Boolean = false,
     hasUnsavedChanges: Boolean = false,
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
-    name: String = "Alex Johnson",
-    username: String = "@alex_j",
-    location: String = "San Francisco, CA",
+    name: String = "",
+    username: String = "",
+    location: String = "",
     bio: String = "",
     editedBio: String = "",
     skillLevel: String = "",
@@ -301,9 +301,9 @@ fun ProfileScreen(
             ) {
                 // Profile Header
                 ProfileHeader(
-                    name = name.ifEmpty { "Alex Johnson" },
-                    username = username.ifEmpty { "@alex_j" },
-                    location = location.ifEmpty { "San Francisco, CA" },
+                    name = name,
+                    username = username,
+                    location = location,
                     profilePictureUrl = profilePictureUrl,
                     onEditProfileClicked = onEditProfileClicked,
                     onEditPictureClicked = onEditPictureClicked
