@@ -7,6 +7,7 @@ data class Profile(
     val fullName: String = "",
     val userName: String = "",
     val email: String = "",
+    val gender: String = "",
     val bio: String = "",
     val city: String = "",
     val playTime: List<String> = emptyList(),

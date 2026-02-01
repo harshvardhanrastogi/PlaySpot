@@ -25,12 +25,16 @@ import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.automirrored.filled.Help
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.EmojiEvents
+import androidx.compose.material.icons.filled.Female
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Male
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.SportsScore
+import androidx.compose.material.icons.filled.Transgender
 import androidx.compose.material.icons.filled.Verified
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -162,6 +166,9 @@ fun ProfileScreenRoute(
         name = uiState.name,
         username = uiState.username,
         location = uiState.location,
+        gender = uiState.gender,
+        editedGender = uiState.editedGender,
+        onGenderChange = viewModel::onGenderChange,
         bio = uiState.bio,
         editedBio = uiState.editedBio,
         skillLevel = uiState.skillLevel,
@@ -186,6 +193,7 @@ fun ProfileScreen(
     onHelpClicked: () -> Unit = {},
     onLogoutClicked: () -> Unit = {},
     onAddSportClicked: () -> Unit = {},
+    onGenderChange: (String) -> Unit = {},
     onBioChange: (String) -> Unit = {},
     onSkillLevelChange: (String) -> Unit = {},
     onPlayTimeToggle: (String) -> Unit = {},
@@ -199,6 +207,8 @@ fun ProfileScreen(
     name: String = "",
     username: String = "",
     location: String = "",
+    gender: String = "",
+    editedGender: String = "",
     bio: String = "",
     editedBio: String = "",
     skillLevel: String = "",
@@ -323,6 +333,15 @@ fun ProfileScreen(
                     bio = if (isEditing) editedBio else bio,
                     isEditing = isEditing,
                     onBioChange = onBioChange
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // Gender Section
+                GenderSection(
+                    gender = if (isEditing) editedGender else gender,
+                    isEditing = isEditing,
+                    onGenderChange = onGenderChange
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -1200,6 +1219,133 @@ private fun EditablePlayTimeChip(
             fontWeight = FontWeight.SemiBold,
             color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.extendedColors.textDark
         )
+    }
+}
+
+@Composable
+private fun GenderSection(
+    gender: String,
+    isEditing: Boolean = false,
+    onGenderChange: (String) -> Unit = {}
+) {
+    val genderOptions = listOf(
+        "male" to "Male",
+        "female" to "Female",
+        "other" to "Other / Prefer not to say"
+    )
+    val shape = RoundedCornerShape(12.dp)
+
+    Column(modifier = Modifier.padding(horizontal = Padding.padding16Dp)) {
+        // Section Header
+        TitleMedium(
+            modifier = Modifier.padding(horizontal = Padding.padding4Dp),
+            text = "Gender",
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.extendedColors.textDark
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        if (isEditing) {
+            // Editing mode - show all gender options as selectable
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                genderOptions.forEach { (genderId, genderLabel) ->
+                    val isSelected = gender == genderId
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(shape)
+                            .background(MaterialTheme.extendedColors.widgetBg)
+                            .border(
+                                width = if (isSelected) 2.dp else 1.dp,
+                                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.extendedColors.outline,
+                                shape = shape
+                            )
+                            .clickWithFeedback(HapticFeedbackType.LongPress) {
+                                onGenderChange(genderId)
+                            }
+                            .padding(Padding.padding16Dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        // Icon
+                        val icon = when (genderId) {
+                            "male" -> Icons.Filled.Male
+                            "female" -> Icons.Filled.Female
+                            else -> Icons.Filled.Transgender
+                        }
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .background(
+                                    if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                                    else MaterialTheme.extendedColors.outline.copy(alpha = 0.3f)
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = icon,
+                                contentDescription = null,
+                                tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+
+                        // Label
+                        LabelLarge(
+                            text = genderLabel,
+                            fontWeight = FontWeight.Medium,
+                            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.extendedColors.textDark,
+                            modifier = Modifier.weight(1f)
+                        )
+
+                        // Check mark
+                        if (isSelected) {
+                            Icon(
+                                imageVector = Icons.Filled.CheckCircle,
+                                contentDescription = "Selected",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+                    }
+                }
+            }
+        } else {
+            // Display mode - show current gender
+            val displayGender = genderOptions.find { it.first == gender }?.second ?: gender.replaceFirstChar { it.uppercase() }
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(shape)
+                    .background(MaterialTheme.extendedColors.widgetBg)
+                    .border(
+                        width = 1.dp,
+                        color = MaterialTheme.extendedColors.outline,
+                        shape = shape
+                    )
+                    .padding(Padding.padding16Dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                val icon = when (gender) {
+                    "male" -> Icons.Filled.Male
+                    "female" -> Icons.Filled.Female
+                    else -> Icons.Filled.Transgender
+                }
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
+                    modifier = Modifier.size(24.dp)
+                )
+                BodyMedium(
+                    text = if (gender.isBlank()) "Not set" else displayGender,
+                    color = if (gender.isBlank()) MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f) else MaterialTheme.extendedColors.textDark
+                )
+            }
+        }
     }
 }
 

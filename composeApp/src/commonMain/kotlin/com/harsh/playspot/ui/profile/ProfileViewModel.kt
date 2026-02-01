@@ -26,6 +26,8 @@ data class ProfileUiState(
     val name: String = "",
     val username: String = "",
     val location: String = "",
+    val gender: String = "",
+    val editedGender: String = "",
     val bio: String = "",
     val editedBio: String = "",
     val skillLevel: String = "",
@@ -92,6 +94,7 @@ class ProfileViewModel(
                         name = profile?.fullName ?: "",
                         username = "@${profile?.userName ?: ""}",
                         location = locationString,
+                        gender = profile?.gender ?: "",
                         bio = profile?.bio ?: "",
                         skillLevel = profile?.skillLevel ?: "",
                         playTimes = profile?.playTime ?: emptyList(),
@@ -160,6 +163,7 @@ class ProfileViewModel(
         _uiState.update {
             it.copy(
                 isEditing = true,
+                editedGender = it.gender,
                 editedBio = it.bio,
                 editedSkillLevel = it.skillLevel,
                 editedPlayTimes = it.playTimes
@@ -172,9 +176,19 @@ class ProfileViewModel(
             it.copy(
                 isEditing = false,
                 hasUnsavedChanges = false,
+                editedGender = "",
                 editedBio = "",
                 editedSkillLevel = "",
                 editedPlayTimes = emptyList()
+            )
+        }
+    }
+    
+    fun onGenderChange(gender: String) {
+        _uiState.update {
+            it.copy(
+                editedGender = gender,
+                hasUnsavedChanges = true
             )
         }
     }
@@ -219,6 +233,7 @@ class ProfileViewModel(
             _uiState.update { it.copy(isSaving = true) }
 
             val updates = mapOf(
+                "gender" to _uiState.value.editedGender,
                 "bio" to _uiState.value.editedBio,
                 "skillLevel" to _uiState.value.editedSkillLevel,
                 "playTime" to _uiState.value.editedPlayTimes
@@ -234,6 +249,7 @@ class ProfileViewModel(
                         isSaving = false,
                         isEditing = false,
                         hasUnsavedChanges = false,
+                        gender = it.editedGender,
                         bio = it.editedBio,
                         skillLevel = it.editedSkillLevel,
                         playTimes = it.editedPlayTimes

@@ -16,6 +16,7 @@ import com.harsh.playspot.ui.home.HomeScreenRoute
 import com.harsh.playspot.ui.login.LoginScreenRoute
 import com.harsh.playspot.ui.profile.AddProfilePictureScreenRoute
 import com.harsh.playspot.ui.profile.PersonalDetailsScreenRoute
+import com.harsh.playspot.ui.signup.GenderSelectionScreenRoute
 import com.harsh.playspot.ui.signup.LocationPermissionScreenRoute
 import com.harsh.playspot.ui.signup.PreferenceSetupCompleteRoute
 import com.harsh.playspot.ui.signup.PreferenceSetupRoute
@@ -75,7 +76,28 @@ fun NavigationRoutes(
                 onBackPressed = { navController.popBackStack() },
                 onLoginClicked = { navController.navigate("Route.Login") },
                 onSignUpSuccess = {
-                    navController.navigate("Route.SportPreference")
+                    navController.navigate("Route.GenderSelection")
+                }
+            )
+        }
+
+        composable("Route.GenderSelection") {
+            GenderSelectionScreenRoute(
+                onCancelOnboarding = {
+                    // Navigate to home and skip remaining onboarding
+                    navController.navigate("Route.Home") {
+                        popUpTo("Route.Login") { inclusive = true }
+                    }
+                },
+                onContinue = {
+                    navController.navigate("Route.SportPreference") {
+                        popUpTo("Route.GenderSelection") { inclusive = true }
+                    }
+                },
+                onSkip = {
+                    navController.navigate("Route.SportPreference") {
+                        popUpTo("Route.GenderSelection") { inclusive = true }
+                    }
                 }
             )
         }
