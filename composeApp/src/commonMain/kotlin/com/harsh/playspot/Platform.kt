@@ -44,3 +44,5 @@ expect fun openMap(latitude: Double, longitude: Double, label: String = "")
  * @param onResult Callback with true if permission granted, false otherwise
  */
 expect fun requestLocationPermission(onResult: (Boolean) -> Unit)
+
+expect fun openNotificationSettings()

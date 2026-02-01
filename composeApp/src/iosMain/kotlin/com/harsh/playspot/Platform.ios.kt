@@ -75,3 +75,6 @@ actual fun requestLocationPermission(onResult: (Boolean) -> Unit) {
     // happens in LocationProvider.ios.kt
     onResult(true)
 }
+
+actual fun openNotificationSettings() {
+}

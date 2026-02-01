@@ -65,6 +65,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
+import com.harsh.playspot.openNotificationSettings
 import com.harsh.playspot.ui.core.AppTheme
 import com.harsh.playspot.ui.core.BodyMedium
 import com.harsh.playspot.ui.core.DangerButton
@@ -145,6 +146,7 @@ fun ProfileScreenRoute(
         },
         onEditProfileClicked = { viewModel.startEditing() },
         onEditPictureClicked = onEditPictureClicked,
+        onNotificationsClicked = { openNotificationSettings() },
         onLogoutClicked = { viewModel.logout() },
         onAddSportClicked = onAddSportClicked,
         onBioChange = viewModel::onBioChange,
@@ -275,17 +277,17 @@ fun ProfileScreen(
                             // Empty space to balance the toolbar when editing without changes
                             Spacer(modifier = Modifier.minimumInteractiveComponentSize())
                         } else {
-                            // Edit button when not editing
-                            LabelLarge(
-                                text = "Edit",
-                                color = MaterialTheme.colorScheme.primary,
-                                fontWeight = FontWeight.SemiBold,
-                                modifier = Modifier
-                                    .minimumInteractiveComponentSize()
-                                    .clickWithFeedback(HapticFeedbackType.Confirm) {
-                                        onEditProfileClicked()
-                                    }
-                            )
+//                            // Edit button when not editing
+//                            LabelLarge(
+//                                text = "Edit",
+//                                color = MaterialTheme.colorScheme.primary,
+//                                fontWeight = FontWeight.SemiBold,
+//                                modifier = Modifier
+//                                    .minimumInteractiveComponentSize()
+//                                    .clickWithFeedback(HapticFeedbackType.Confirm) {
+//                                        onEditProfileClicked()
+//                                    }
+//                            )
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors()
