@@ -38,4 +38,15 @@ object DeepLinkHandler {
             else -> null
         }
     }
+    
+    /**
+     * Check if the deeplink is a password reset completion link
+     * Supports:
+     * - playspot://password-reset-complete
+     * - https://playspot.app/password-reset-complete
+     */
+    fun isPasswordResetComplete(uri: String): Boolean {
+        return uri.startsWith("playspot://password-reset-complete") ||
+               uri.contains("playspot.app/password-reset-complete")
+    }
 }

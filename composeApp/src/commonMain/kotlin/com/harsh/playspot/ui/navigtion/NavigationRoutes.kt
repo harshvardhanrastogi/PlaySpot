@@ -7,12 +7,15 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.navigation.NavController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.harsh.playspot.ui.events.CreateEventScreenRoute
 import com.harsh.playspot.ui.events.EventDetailsScreenRoute
 import com.harsh.playspot.ui.home.HomeScreenRoute
+import com.harsh.playspot.ui.login.ForgotPasswordScreenRoute
 import com.harsh.playspot.ui.login.LoginScreenRoute
 import com.harsh.playspot.ui.profile.AddProfilePictureScreenRoute
 import com.harsh.playspot.ui.profile.PersonalDetailsScreenRoute
@@ -32,7 +35,7 @@ fun NavigationRoutes(
     onBackPressed: () -> Unit
 ) {
     val navController = rememberNavController()
-    val startScreen = if (hasUserSession) "Route.Home" else "Route.Login"
+    val startScreen = if (hasUserSession) "Route.Home?defaultTab={defaultTab}" else "Route.Login?passwordReset={passwordReset}"
     
     // Handle deeplink from Android (passed as parameter)
     LaunchedEffect(deepLinkUri) {
@@ -102,11 +105,33 @@ fun NavigationRoutes(
             )
         }
 
-        composable("Route.Login") {
+        composable(
+            route = "Route.Login?passwordReset={passwordReset}",
+            arguments = listOf(
+                navArgument("passwordReset") {
+                    type = NavType.BoolType
+                    defaultValue = false
+                }
+            )
+        ) { backStackEntry ->
+            val passwordResetSuccess = backStackEntry.arguments?.getBoolean("passwordReset") ?: false
             LoginScreenRoute(
                 onBackPressed = onBackPressed,
                 onSignUpClicked = { navController.navigate("Route.SignUp") },
-                onLoginSuccess = { navController.navigate("Route.Home") }
+                onForgotPasswordClicked = { navController.navigate("Route.ForgotPassword") },
+                onLoginSuccess = {
+                    navController.navigate("Route.Home") {
+                        popUpTo(0) { inclusive = true }
+                    }
+                },
+                showPasswordResetSuccess = passwordResetSuccess
+            )
+        }
+
+        composable("Route.ForgotPassword") {
+            ForgotPasswordScreenRoute(
+                onBackPressed = { navController.popBackStack() },
+                onEmailSent = { navController.popBackStack() }
             )
         }
 
@@ -178,7 +203,7 @@ fun NavigationRoutes(
                 openOrganizingEvents = openOrganizingEvents,
                 onLogoutSuccess = {
                     navController.navigate("Route.Login") {
-                        popUpTo("Route.Login") { inclusive = true }
+                        popUpTo(0) { inclusive = true }
                     }
                 },
                 onAddSportClicked = {
@@ -267,13 +292,27 @@ sealed class Route {
 }
 
 /**
- * Handle deeplink navigation to event details
+ * Handle deeplink navigation
+ * Supports:
+ * - Event details: playspot://event/{eventId} or https://playspot.app/event/{eventId}
+ * - Password reset complete: playspot://password-reset-complete or https://playspot.app/password-reset-complete
  */
 private fun handleDeepLinkNavigation(
     uri: String,
     hasUserSession: Boolean,
     navController: NavController
 ) {
+    // Check for password reset completion link first
+    if (DeepLinkHandler.isPasswordResetComplete(uri)) {
+        // Navigate to login with password reset success flag
+        navController.navigate("Route.Login?passwordReset=true") {
+            popUpTo(0) { inclusive = true }
+            launchSingleTop = true
+        }
+        return
+    }
+    
+    // Handle event deep links
     val eventId = DeepLinkHandler.parseEventId(uri)
     if (eventId != null && hasUserSession) {
         // Navigate to event details

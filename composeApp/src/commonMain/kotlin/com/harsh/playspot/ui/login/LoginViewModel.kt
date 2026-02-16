@@ -23,7 +23,6 @@ data class LoginUiState(
 sealed class LoginEvent {
     data object LoginSuccess : LoginEvent()
     data class LoginError(val message: String) : LoginEvent()
-    data object ForgotPasswordEmailSent : LoginEvent()
 }
 
 class LoginViewModel(
@@ -91,38 +90,6 @@ class LoginViewModel(
                 .onFailure { exception ->
                     _uiState.update { it.copy(isLoading = false) }
                     _events.emit(LoginEvent.LoginError(exception.message ?: "Login failed"))
-                }
-        }
-    }
-
-    fun forgotPassword() {
-        val email = _uiState.value.email
-        
-        if (email.isBlank()) {
-            _uiState.update {
-                it.copy(emailError = "Enter your email to reset password")
-            }
-            return
-        }
-
-        if (!isValidEmail(email)) {
-            _uiState.update {
-                it.copy(emailError = "Invalid email format")
-            }
-            return
-        }
-
-        viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
-            
-            authRepository.sendPasswordResetEmail(email)
-                .onSuccess {
-                    _uiState.update { it.copy(isLoading = false) }
-                    _events.emit(LoginEvent.ForgotPasswordEmailSent)
-                }
-                .onFailure { exception ->
-                    _uiState.update { it.copy(isLoading = false) }
-                    _events.emit(LoginEvent.LoginError(exception.message ?: "Failed to send reset email"))
                 }
         }
     }

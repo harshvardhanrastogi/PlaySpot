@@ -52,6 +52,7 @@ import playspot.composeapp.generated.resources.login_forgot_password
 import playspot.composeapp.generated.resources.login_join_squad
 import playspot.composeapp.generated.resources.login_label_email
 import playspot.composeapp.generated.resources.login_label_password
+import playspot.composeapp.generated.resources.login_password_reset_success
 import playspot.composeapp.generated.resources.login_signup
 import playspot.composeapp.generated.resources.login_signup_account
 import playspot.composeapp.generated.resources.login_welcome_back
@@ -60,18 +61,27 @@ import playspot.composeapp.generated.resources.login_welcome_back
 fun LoginScreenRoute(
     onBackPressed: () -> Unit,
     onSignUpClicked: () -> Unit,
+    onForgotPasswordClicked: () -> Unit = {},
     onLoginSuccess: () -> Unit = {},
+    showPasswordResetSuccess: Boolean = false,
     viewModel: LoginViewModel = viewModel { LoginViewModel() }
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
+    val passwordResetSuccessMessage = stringResource(Res.string.login_password_reset_success)
+
+    // Show password reset success message when navigated from deep link
+    LaunchedEffect(showPasswordResetSuccess) {
+        if (showPasswordResetSuccess) {
+            snackbarHostState.showSnackbar(passwordResetSuccessMessage)
+        }
+    }
 
     LaunchedEffect(Unit) {
         viewModel.events.collectLatest { event ->
             when (event) {
                 is LoginEvent.LoginSuccess -> onLoginSuccess()
                 is LoginEvent.LoginError -> snackbarHostState.showSnackbar(event.message)
-                is LoginEvent.ForgotPasswordEmailSent -> snackbarHostState.showSnackbar("Password reset email sent")
             }
         }
     }
@@ -84,7 +94,7 @@ fun LoginScreenRoute(
         onEmailChange = viewModel::onEmailChange,
         onPasswordChange = viewModel::onPasswordChange,
         onLoginClicked = viewModel::login,
-        onForgotPasswordClicked = viewModel::forgotPassword
+        onForgotPasswordClicked = onForgotPasswordClicked
     )
 }
 

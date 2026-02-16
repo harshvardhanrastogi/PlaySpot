@@ -788,6 +788,38 @@ fun TransparentToolbar(onBackPressed: () -> Unit) {
     )
 }
 
+manage@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun TitleToolbar(
+    title: String,
+    onBackPressed: () -> Unit
+) {
+    TopAppBar(
+        navigationIcon = {
+            Icon(
+                modifier = Modifier.minimumInteractiveComponentSize().clickWithFeedback(
+                    HapticFeedbackType.Confirm
+                ) {
+                    onBackPressed()
+                },
+                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                contentDescription = null,
+                tint = MaterialTheme.extendedColors.textDark
+            )
+        },
+        title = {
+            TitleMedium(
+                text = title,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.extendedColors.textDark
+            )
+        },
+        colors = TopAppBarDefaults.topAppBarColors().copy(
+            containerColor = MaterialTheme.colorScheme.background
+        ),
+    )
+}
+
 @Composable
 fun AlternateAccountOptions() {
     Row(

@@ -1,6 +1,8 @@
 package com.harsh.playspot.data.auth
 
 import dev.gitlive.firebase.Firebase
+import dev.gitlive.firebase.auth.ActionCodeSettings
+import dev.gitlive.firebase.auth.AndroidPackageName
 import dev.gitlive.firebase.auth.FirebaseUser
 import dev.gitlive.firebase.auth.auth
 import kotlinx.coroutines.flow.Flow
@@ -60,11 +62,21 @@ class AuthRepository private constructor() {
     }
 
     /**
-     * Send password reset email
+     * Send password reset email with redirect back to app after reset
      */
     suspend fun sendPasswordResetEmail(email: String): Result<Unit> {
         return try {
-            auth.sendPasswordResetEmail(email)
+            val actionCodeSettings = ActionCodeSettings(
+                url = "https://playspot.app/password-reset-complete",
+                canHandleCodeInApp = true,
+                androidPackageName = AndroidPackageName(
+                    packageName = "com.harsh.playspot",
+                    installIfNotAvailable = true,
+                    minimumVersion = null
+                ),
+                iOSBundleId = "com.harsh.playspot"
+            )
+            auth.sendPasswordResetEmail(email, actionCodeSettings)
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
