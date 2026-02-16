@@ -788,7 +788,7 @@ fun TransparentToolbar(onBackPressed: () -> Unit) {
     )
 }
 
-manage@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TitleToolbar(
     title: String,
